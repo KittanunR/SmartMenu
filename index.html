@@ -58,12 +58,21 @@
     <p class="colophon__mark" id="colophon"></p>
   </footer>
 
-  <div class="dock">
-    <a class="line-btn" id="line-cta" href="#" target="_blank" rel="noopener">
-      <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
-      <span id="cta-label">สั่งซื้อทาง LINE</span>
-    </a>
+  <div class="dock" id="dock">
+    <div class="dock__inner">
+      <a class="line-btn" id="line-cta" href="#" target="_blank" rel="noopener">
+        <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
+        <span id="cta-label">สั่งซื้อทาง LINE</span>
+      </a>
+      <button class="cart-btn" id="cart-cta" type="button" aria-haspopup="dialog" hidden>
+        <svg class="cart-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bag"/></svg>
+        <span class="cart-btn__count" id="cart-count"></span>
+        <span class="cart-btn__view" id="cart-view"></span>
+        <span class="cart-btn__total" id="cart-total"></span>
+      </button>
+    </div>
   </div>
+  <div class="toast" id="toast" role="status" hidden></div>
 
   <dialog class="sheet" id="sheet" aria-labelledby="sheet-name">
     <div class="sheet__body">
@@ -80,6 +89,11 @@
         <thead><tr><th scope="col" id="th-qty"></th><th scope="col" id="th-price"></th><th scope="col" id="th-save"></th></tr></thead>
         <tbody id="sheet-tiers"></tbody>
       </table>
+      <div id="sheet-buy"></div>
+      <button class="order-btn" id="sheet-cart" type="button" hidden>
+        <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bag"/></svg>
+        <span id="sheet-cart-label"></span>
+      </button>
       <a class="order-btn" id="sheet-order" href="#" target="_blank" rel="noopener">
         <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
         <span id="sheet-order-label"></span>
@@ -87,7 +101,108 @@
     </div>
   </dialog>
 
+  <dialog class="sheet cart" id="cart" aria-labelledby="cart-title">
+    <div class="sheet__body">
+      <button class="sheet__close" id="cart-close" type="button" data-t-aria="close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <section id="cart-step-cart">
+        <h2 class="cart__title" id="cart-title" data-t="cartTitle"></h2>
+        <p class="cart__week" id="cart-week"></p>
+        <p class="cart__empty" id="cart-empty" data-t="cartEmpty" hidden></p>
+        <ul class="cart__lines" id="cart-lines"></ul>
+        <div class="cart__foot">
+          <div class="cart__sum" id="cart-sumrow">
+            <span><span data-t="total"></span> <span class="cart__count" id="cart-count-line"></span></span>
+            <span class="cart__total" id="cart-sum"></span>
+          </div>
+          <p class="cart__fine" data-t="cartFine"></p>
+          <button class="order-btn" id="cart-next" type="button" data-t="toForm"></button>
+        </div>
+      </section>
+
+      <form class="cart__form" id="cart-form" novalidate hidden>
+        <button class="back-btn" id="form-back" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>
+          <span data-t="back"></span>
+        </button>
+        <h2 class="cart__title" id="form-title" data-t="formTitle"></h2>
+        <p class="cart__week"><span id="form-count"></span> · <span data-t="total"></span> <strong class="cart__inline-total" id="form-sum"></strong></p>
+
+        <div class="field">
+          <label for="f-shop"><span data-t="fShop"></span> <span class="field__req" aria-hidden="true">*</span></label>
+          <input id="f-shop" name="shop_name" type="text" autocomplete="organization" maxlength="80" required aria-describedby="f-shop-err" data-t-ph="phShop">
+          <p class="field__err" id="f-shop-err" hidden></p>
+        </div>
+        <div class="field">
+          <label for="f-phone"><span data-t="fPhone"></span> <span class="field__req" aria-hidden="true">*</span></label>
+          <input id="f-phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="14" required placeholder="0812345678" aria-describedby="f-phone-hint f-phone-err">
+          <p class="field__hint" id="f-phone-hint" data-t="fPhoneHint"></p>
+          <p class="field__err" id="f-phone-err" hidden></p>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-contact"><span data-t="fContact"></span></label>
+            <input id="f-contact" name="contact_name" type="text" autocomplete="name" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="f-line"><span data-t="fLine"></span></label>
+            <input id="f-line" name="line_name" type="text" autocomplete="off" maxlength="40">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-date"><span data-t="fDate"></span> <span class="field__req" aria-hidden="true">*</span></label>
+          <input id="f-date" name="delivery_date" type="date" required aria-describedby="f-date-err">
+          <p class="field__err" id="f-date-err" hidden></p>
+        </div>
+        <div class="field">
+          <label for="f-address"><span data-t="fAddress"></span></label>
+          <textarea id="f-address" name="address_note" rows="2" maxlength="200" autocomplete="street-address" data-t-ph="phAddress"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-note"><span data-t="fNote"></span></label>
+          <textarea id="f-note" name="note" rows="2" maxlength="200"></textarea>
+        </div>
+        <!-- Honeypot: people never see or fill this; bots that fill every field do. -->
+        <div class="hp" aria-hidden="true">
+          <label for="f-hp">Leave this empty</label>
+          <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="cart__foot">
+          <p class="form__error" id="form-error" role="alert" hidden></p>
+          <button class="order-btn" id="form-submit" type="submit">
+            <span class="spinner" id="form-spinner" aria-hidden="true" hidden></span>
+            <span id="form-submit-label"></span>
+          </button>
+        </div>
+      </form>
+
+      <section class="done" id="cart-done" hidden>
+        <span class="done__mark" aria-hidden="true">
+          <svg class="done__ok" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <svg class="done__send" viewBox="0 0 24 24"><use href="#i-line"/></svg>
+        </span>
+        <h2 class="done__title" id="done-title"></h2>
+        <div class="done__id" id="done-id-wrap" hidden>
+          <span class="done__id-label" data-t="orderNo"></span>
+          <span class="done__id-value" id="done-id"></span>
+        </div>
+        <p class="done__summary" id="done-summary"></p>
+        <p class="done__body" id="done-body"></p>
+        <a class="send-line" id="done-line" href="#" target="_blank" rel="noopener">
+          <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
+          <span data-t="sendLine"></span>
+        </a>
+        <button class="line-btn done__retry" id="done-retry" type="button" data-t="retry" hidden></button>
+        <button class="text-btn" id="done-menu" type="button" data-t="backToMenu"></button>
+      </section>
+    </div>
+  </dialog>
+
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-bag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
     <symbol id="i-line" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.6 2 11.04c0 3.98 3.55 7.31 8.35 7.94.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.4 22 12.8 22 11.04 22 6.6 17.52 3 12 3zM8.3 13.4H6.3a.52.52 0 0 1-.52-.52V9.04a.52.52 0 1 1 1.04 0v3.32H8.3a.52.52 0 1 1 0 1.04zm2.07-.52a.52.52 0 1 1-1.04 0V9.04a.52.52 0 1 1 1.04 0v3.84zm4.8 0a.52.52 0 0 1-.94.31l-1.97-2.68v2.37a.52.52 0 1 1-1.04 0V9.04a.52.52 0 0 1 .94-.31l1.97 2.68V9.04a.52.52 0 1 1 1.04 0v3.84zm3.23-2.44a.52.52 0 1 1 0 1.04h-1.48v.88h1.48a.52.52 0 1 1 0 1.04H16.4a.52.52 0 0 1-.52-.52V9.04c0-.29.23-.52.52-.52h2a.52.52 0 1 1 0 1.04h-1.48v.88h1.48z"/></symbol>
     <!-- Category badges: simple self-drawn silhouettes, white on the leaf disc. -->
     <symbol id="i-pork" viewBox="0 0 48 48"><g transform="translate(24 25) scale(1.14) translate(-24 -25)"><g fill="currentColor"><ellipse cx="22" cy="26" rx="12" ry="8.5"/><circle cx="32.5" cy="23.5" r="6.5"/><rect x="37" y="21" width="5" height="6.5" rx="2"/><path d="M28.5 18.5l2.5-6 3.5 6.2z"/><rect x="13" y="30" width="3.6" height="8" rx="1.2"/><rect x="18.5" y="31" width="3.6" height="7" rx="1.2"/><rect x="25" y="31" width="3.6" height="7" rx="1.2"/><rect x="30.4" y="29" width="3.6" height="9" rx="1.2"/></g><path d="M10.5 24.5c-2.6.4-3.4-2.6-1.2-3.2 1.6-.4 2 1.6.6 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="33.6" cy="21.6" r="1.1" fill="#78B040"/></g></symbol>

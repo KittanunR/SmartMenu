@@ -34,12 +34,40 @@ The sheet covers one week, Saturday to Friday (e.g. 17/10/2026 – 23/10/2026), 
 `publish-prices.mjs` is the only way prices get into the site. Never edit `data/prices/*.json` by hand.
 ราคาเข้าเว็บได้ทางเดียวคือ `publish-prices.mjs` ห้ามแก้ไฟล์ราคาด้วยมือ
 
+## Online ordering / สั่งซื้อออนไลน์
+
+| Tile | Cart | Details | Done |
+|---|---|---|---|
+| ![](docs/screens/order-1-tile.png) | ![](docs/screens/order-2-cart.png) | ![](docs/screens/order-3-form.png) | ![](docs/screens/order-4-confirm.png) |
+
+1. The buyer taps **ใส่ตะกร้า / Add** on a tile or in the product sheet and sets a whole-number quantity.
+   The unit price is the tier for that quantity from `latest.json` (1–2 / 3+ / 6+ / 10+), and the page says
+   when a cheaper tier is used and how much more unlocks the next one.
+   ลูกค้ากดใส่ตะกร้าแล้วเลือกจำนวน ราคาต่อหน่วยคิดตามขั้นจำนวนจาก `latest.json` และบอกว่าซื้อเพิ่มอีกเท่าไรจะได้ราคาขั้นถัดไป
+2. The cart bar opens the cart, then a short form (shop name, phone, delivery date from tomorrow, address, note).
+   แถบตะกร้าด้านล่างเปิดตะกร้า แล้วกรอกข้อมูลจัดส่งสั้น ๆ (ชื่อร้าน เบอร์โทร วันรับของตั้งแต่พรุ่งนี้ ที่อยู่ หมายเหตุ)
+3. If `config.json` → `order_endpoint` is set, the order is POSTed to that Google Apps Script web app exactly as
+   [`docs/ORDER_CONTRACT.md`](docs/ORDER_CONTRACT.md) says, and the buyer sees the order number. If it is empty
+   (pilot), nothing is sent.
+   ถ้าตั้ง `order_endpoint` ไว้ ออเดอร์จะส่งไป Apps Script ตาม `docs/ORDER_CONTRACT.md` และลูกค้าเห็นเลขที่ออเดอร์ ถ้าเว้นว่าง (ช่วงทดลอง) จะไม่ส่งไปไหน
+4. Either way the buyer gets a big **ส่งสรุปออเดอร์เข้า LINE / Send order to LINE** button that opens the shop's
+   LINE OA (`line_oa_id`) with the order summary already typed. If the POST fails, this button is the fallback.
+   ทุกกรณีจะมีปุ่มส่งสรุปออเดอร์เข้า LINE ร้าน (ข้อความพิมพ์ให้แล้ว) ถ้าส่งเข้าระบบไม่สำเร็จก็ใช้ปุ่มนี้แทนได้
+5. Ordering pauses on its own when this week's prices are out of date (same rule as the stale-price notice).
+   ถ้าราคาหมดอายุ ระบบปิดการสั่งออนไลน์เองจนกว่าราคาสัปดาห์ใหม่จะขึ้น
+
+**Order data never goes into this repo.** The cart and the buyer's details stay in the buyer's own browser
+(localStorage) until they submit; submitted orders go only to the Apps Script → the DIFOT sandbox Google Sheet.
+The repo is public: never commit orders, customer lists, phone numbers or the Apps Script secrets.
+**ข้อมูลออเดอร์ไม่เคยเข้า repo นี้** ตะกร้าและข้อมูลลูกค้าอยู่ในเบราว์เซอร์ของลูกค้าเองจนกดส่ง ออเดอร์ที่ส่งแล้วไปที่ Apps Script → Google Sheet (DIFOT sandbox) เท่านั้น
+repo นี้เป็นสาธารณะ ห้าม commit ออเดอร์ รายชื่อลูกค้า เบอร์โทร หรือความลับของ Apps Script
+
 ## What lives where
 
 | Path | What |
 |---|---|
 | `index.html`, `app.js`, `styles.css` | The menu page. No framework, no build. |
-| `config.json` | Shop name and LINE OA link. **Replace `line_oa_url` before go-live.** |
+| `config.json` | Shop name, LINE OA link + id (`line_oa_url`, `line_oa_id`), `shop_id` for orders, `order_endpoint` (Apps Script URL; empty = pilot, LINE only), `stale_after_days`. |
 | `data/catalog.json` | Products (our SKU, Betagro SAP code, Thai/English names and descriptions, unit, photo). Edit by hand when the range changes. |
 | `data/prices/YYYY-MM-DD.json` | One file per price week (history), named by `valid_from`. Each product has quantity tiers. |
 | `data/prices/latest.json` | Copy of the newest week. The page reads this. |

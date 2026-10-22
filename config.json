@@ -1,6 +1,9 @@
 {
   "shop_name_th": "Betagro Shop สุขุมวิท",
   "shop_name_en": "Betagro Shop Sukhumvit",
-  "line_oa_url": "https://line.me/R/ti/p/@897izxro",
-  "stale_after_days": 9
+  "line_oa_url": "https://line.me/R/ti/p/%40897izxro",
+  "line_oa_id": "@897izxro",
+  "stale_after_days": 9,
+  "shop_id": "SU22",
+  "order_endpoint": "https://script.google.com/macros/s/AKfycbyCWFykAPyH7bjGIgfAqo2Af44Udwy9RtIkhpvsSIfUXNmexgkuw3Ak-9LQDC5idomd/exec"
 }
