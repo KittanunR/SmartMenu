@@ -8,3 +8,4 @@
 - 2026-10-22: Uploaded PDF Betagro_Trade_MKT_.pdf is the March 2026 product catalogue (scanned, no prices) — not the price sheet. Prices came from the two sheet images.
 - 2026-10-22: Pork English names are Claude's translations (sheet has none); ขั้วตับหมู → "Pork skirt (hanging tender)" least certain.
 - 2026-10-22: Real prices loaded at `price-menu@d193b13` (pork 33, chicken 26, eggs 6). Attached PDF turned out to be a March-2026 product catalogue (scanned, no prices); prices came from the two sheet images. Odd items to confirm with team: duplicate SAP 1000053261; คอหมู ฿357/kg (2.5× median); wing tip ฿120 > whole wing ฿100; ขั้วตับหมู English name uncertain.
+- 2026-10-22: LINE OA set: @897izxro → config.json line_oa_url https://line.me/R/ti/p/@897izxro (both "Order via LINE" buttons).
