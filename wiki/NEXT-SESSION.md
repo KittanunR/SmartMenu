@@ -1,21 +1,28 @@
-# Next session — pick up here (written 2026-10-22 20:50)
+# Next session — pick up here (written 2026-10-23 01:38)
 
-Open a new chat, connect folder `Documents\Smart menu`, and say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ" (or `/chief-of-staff` with that).
+Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ". Open in Claude Code inside `Documents\Smart menu\SmartMenu` if building the DIFOT board (option 1 below).
 
-## Where things stand (2026-10-22)
-- Live site: https://kittanunr.github.io/SmartMenu/ — v2 menu, real prices 17–23/10/2026, LINE OA @897izxro.
-- Local repo (this folder) has UNPUSHED changes: cart/checkout, Apps Script source, order contract, wiki. See wiki/ordering.md.
-- DIFOT sandbox: AppSheet app "SmartMenu Sandbox DIFOT" + sheet "Event" (id 1e8x…ISAg). Teammate's original app/sheet untouched.
+## Done (2026-10-22/23)
+- Live site https://kittanunr.github.io/SmartMenu/ has cart + checkout; orders POST to Apps Script v2 (`config.json` order_endpoint) → sandbox sheet "Event" (id 1e8x…ISAg): Order / Order_Items / Event / Master. E2E tested. See ordering.md.
+- AppSheet sandbox "SmartMenu Sandbox DIFOT": step buttons → evidence forms (Form_Pack / Form_Rider / Form_Deliver). See difot-step-flow.md.
+- index.html loads app.js/styles.css with `?v=YYYY-MM-DD` — bump on every code change (GitHub Pages caches 10 min).
 
-## Next steps, in order
-1. ~~Deploy Apps Script web app~~ DONE 2026-10-22 23:47 (URL in config.json; backend test order W261022-001 OK). Old note: (script.google.com, account btgs.sukhumvit = authuser 1): Deploy → New deployment → Web app, Execute as me, Anyone → Petch clicks Authorize access → Allow. Copy the `/exec` URL.
-2. ~~Put the URL into config.json~~ DONE.
-3. DONE 2026-10-23 00:10 — AppSheet sandbox: Order + Master regenerated; Slip_Photo Require? = [Source]<>"Web" (Petch); Order_Items added (Item_ID key, Order_ID Ref→Order, Is a part of = yes) → Order got virtual col "Related Order_Items"; saved, no issues. Old note: Master → Regenerate structure; add table Order_Items (ref Order_ID → Order); Slip_Photo Require? = `[Source]<>"Web"`; show Order_Items inside the order detail; Save.
-4. DONE 2026-10-23 00:11 (W261023-001 passed; see ordering.md). Old note: one order from the site → check Order/Order_Items/Event/Master rows in the sandbox sheet → appears in "เคาน์เตอร์" → LINE message opens with summary.
-5. DONE 2026-10-23 00:10 (pushed). NEW 5b: fix AppSheet cosmetics (Web_Phone type Phone, Unit_Price ฿) + delete test rows.
-6. Later: show teammate → apply same changes to the real DIFOT; map SmartMenu SKUs (PK-/CK-/EG-) to Master SKU codes (SKU-001…).
+## Tomorrow's plan (Petch, 2026-10-23 01:29) — in Claude Code
+1. Focus = SmartMenu only (DIFOT/AppSheet parked; it's the teammate's project, Petch only exploring). Design fixes to close the gaps in smartmenu-capacity-risks-login.md:
+   - ordering under load (lock/timeout, retry), fallback to LINE when the endpoint fails (keep cart), spam protection, CI that blocks broken pushes, less dependence on one Google account.
+   - customer identity (Petch likes it, 2026-10-23 01:35): private code per shop, hidden inside a per-shop QR/link (sticker or card left by salesperson, or sent in LINE) → scan = shop recognised + remembered; fallback phone number (masked address); typed code last resort. Then saved address, per-group menu/prices, reorder. LINE Login later on same shop record. PDPA notice.
+   - optional: make SmartMenu installable (PWA) instead of a store app (Petch asked why store apps are harder: fees, review, 2 platforms, Mac for iOS, slow updates).
+2. Later / optional: DIFOT web kanban demo (option 1 below).
+
+## Parked decision (Petch, 2026-10-23 01:21)
+Problem: เคาน์เตอร์ tab = slice Today_Orders `[Order_Date]=TODAY()` → orders never leave the counter. Tabs: จัดของ = `[Status]="Received"`, ส่งของ = `IN([Status],{"Packed","Out"})`, Delivered_7D = Delivered/Issue last 7 days.
+Petch chose a counter confirm step (new Status "New" → counter presses ส่งไปจัดของ → "Received"). NOT built yet — paused because Petch asked about leaving AppSheet.
+Options offered:
+1. (recommended) Own web app: kanban board เคาน์เตอร์ → จัดของ → ส่งของ → เสร็จ, cards move with required evidence (photo/rider), opens from LINE, same Google Sheet via Apps Script (add doGet list + doPost step/photo upload to Drive). Build as demo on sandbox data first; teammate owns real DIFOT → agree before switching.
+2. Glide on the same Sheet. 3. Lark Base kanban (data moves out).
+If staying on AppSheet: build the confirm step (Status enum + initial "New", Today_Orders filter `[Status]="New"`, action ส่งไปจัดของ with confirm, Code.gs Status 'New' + redeploy same deployment).
 
 ## Things to remember
-- Ordering auto-pauses after the price sheet's `valid_to` (Friday). New prices must be published every Friday or ordering stops Saturday.
-- Never write to the original sheet DIFOT_Pilot_SU22 (id 1UEI…xvx8).
-- Lesson plan for API key / Benny: `Documents\Smart menu\learn-smartmenu\NEXT-SESSION.md`.
+- Never write to original DIFOT_Pilot_SU22 (id 1UEI…xvx8). Sandbox only.
+- Ordering pauses after prices' `valid_to` — publish new prices every Friday.
+- Test order rows still in sandbox: W261023-002, W261023-003 (Petch's), CUS-W002/003.

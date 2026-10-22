@@ -1,0 +1,12 @@
+# DIFOT step flow (sandbox app "SmartMenu Sandbox DIFOT")
+- 2026-10-23 00:34: Petch asked: open an order → see what must be done to finish, which step it is at, and finish each step in turn.
+- Existing flow (teammate's design, copied into sandbox): Status Received → Packed (T3_Packed) → Out (T4_Pickup) → Delivered (T5_Delivered); Customer Issue after Delivered → Issue + Exception form.
+- 2026-10-23 01:00 (v1, REJECTED): text tracker columns in the order header (Step_Now / Progress / Next_Todo). Petch 00:55: looks clunky ("กิ้งก้อง"), remove the text; moving to the next step must require evidence; redesign properly.
+- 2026-10-23 01:20 (v2, built + tested, sandbox only, saved with no issues):
+  - Text columns + header entries deleted.
+  - One button per step, shown only at its step: จัดของเสร็จ (Received) / ไรเดอร์รับของ (Packed) / ส่งถึงลูกค้า (Out). Actions Go_Pack / Go_Rider / Go_Deliver = LINKTOROW([Order_ID], "Form_…").
+  - Each button opens a small form with only the evidence for that step: Form_Pack = Pick_Result + Bag_Photo; Form_Rider = Rider_Type; Form_Deliver = Delivery_Photo.
+  - Evidence required only inside its form: column Require? = CONTEXT("View")="Form_Pack" / "Form_Rider" / "Form_Deliver" (normal Edit and counter +Add are not blocked).
+  - Form Saved event runs the original data actions (Pack Done / Rider Pickup / Mark Delivered → set T3/T4/T5 = NOW() + Status). Those 3 old direct buttons set to Hide.
+  - Test 01:16 on W261023-003: rider form blocked Save until Rider_Type chosen; saved → T4_Pickup + Status Out, button switched to ส่งถึงลูกค้า; delivery form blocks Save without photo (cancelled, order left at Out).
+  - Also fixed earlier: Web_Phone / Web_Delivery_Date / Web_Total no longer Required.

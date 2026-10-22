@@ -115,7 +115,11 @@ function findOrCreateCustomer_(ss, c, now) {
 function nextOrderId_(sheet, now) {
   const prefix = 'W' + Utilities.formatDate(now, TZ, 'yyMMdd') + '-';
   const ids = sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), 1).getValues().flat();
-  const n = ids.filter(id => String(id).indexOf(prefix) === 0).length + 1;
+  // max+1, not count+1: stays unique even after test rows are deleted (fixed 2026-10-23)
+  const n = ids.reduce((m, id) => {
+    const s = String(id);
+    return s.indexOf(prefix) === 0 ? Math.max(m, Number(s.slice(prefix.length)) || 0) : m;
+  }, 0) + 1;
   return prefix + String(n).padStart(3, '0');
 }
 

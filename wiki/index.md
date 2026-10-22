@@ -16,5 +16,9 @@ Dated history of decisions for the QR price-menu site. Never "currently" — dat
 
 - [ordering.md](ordering.md) — 2026-10-22 proposal: menu takes orders → AppSheet + LINE OA
 
+- [difot-step-flow.md](difot-step-flow.md) — 2026-10-23 step buttons → evidence forms (photo/rider required) in DIFOT sandbox
+
+- [smartmenu-capacity-risks-login.md](smartmenu-capacity-risks-login.md) — 2026-10-23 capacity, single points of failure, customer login options (SmartMenu only)
+
 ## Open items
 - [open-items.md](open-items.md) — waiting on real SKU list + sample price PDF
