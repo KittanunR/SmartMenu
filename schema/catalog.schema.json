@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://betagro-shop.example/schema/catalog.schema.json",
+  "title": "Betagro Shop price-menu catalog",
+  "description": "Stable product info. Changes rarely (new SKU, new photo). Prices live elsewhere (data/prices/).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "products"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "products": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/product" }
+    }
+  },
+  "$defs": {
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sku", "category", "name_th", "name_en", "unit", "image", "active"],
+      "properties": {
+        "sku": { "type": "string", "pattern": "^[A-Z]{2}-[0-9]{3,}$", "description": "Our catalog key, e.g. PK-001. Unique. Never reuse a SKU for a different product." },
+        "sap_code": { "type": "string", "pattern": "^[0-9]+$", "description": "Betagro SAP code (รหัสอ้างอิง) as printed on the price sheet. Optional (eggs have none). Not unique: the sheet can list one code twice; the validator warns." },
+        "category": { "type": "string", "enum": ["pork", "chicken", "egg", "fish"] },
+        "name_th": { "type": "string", "minLength": 1, "description": "Thai name exactly as on the price sheet" },
+        "name_en": { "type": "string", "minLength": 1 },
+        "description_th": { "type": "string", "minLength": 1, "description": "Optional detail from the sheet's ลักษณะสินค้า column" },
+        "description_en": { "type": "string", "minLength": 1 },
+        "unit": { "type": "string", "enum": ["kg", "tray", "pack"], "description": "What one price is quoted per; prices[].qty_unit should match. tray = 30 eggs." },
+        "image": { "type": "string", "pattern": "^assets/products/[A-Za-z0-9._-]+\\.(svg|png|jpg|jpeg|webp)$" },
+        "active": { "type": "boolean", "description": "false = hidden from the menu, history kept" },
+        "placeholder": { "type": "boolean", "description": "true = seed/demo item, replace with a real Betagro SKU" }
+      }
+    }
+  }
+}

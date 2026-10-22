@@ -1,0 +1,671 @@
+{
+  "version": 2,
+  "products": [
+    {
+      "sku": "PK-001",
+      "sap_code": "1000004780",
+      "category": "pork",
+      "name_th": "มันแข็งหมู",
+      "name_en": "Pork back fat",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-002",
+      "sap_code": "1000006766",
+      "category": "pork",
+      "name_th": "กระดูกเล้งAQ",
+      "name_en": "Pork spine bones (AQ)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-003",
+      "sap_code": "1000003748",
+      "category": "pork",
+      "name_th": "กระดูกเล้งAN",
+      "name_en": "Pork spine bones (AN)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-004",
+      "sap_code": "1000004564",
+      "category": "pork",
+      "name_th": "ขั้วตับหมู",
+      "name_en": "Pork skirt (hanging tender)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-005",
+      "sap_code": "1000004532",
+      "category": "pork",
+      "name_th": "คอหมู",
+      "name_en": "Pork jowl (neck)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-006",
+      "sap_code": "1000002450",
+      "category": "pork",
+      "name_th": "ซี่โครงหมูสไลด์",
+      "name_en": "Sliced pork ribs",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-007",
+      "sap_code": "1000004553",
+      "category": "pork",
+      "name_th": "ซี่โครงหมูอ่อนA",
+      "name_en": "Pork spare ribs A",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-008",
+      "sap_code": "1000020135",
+      "category": "pork",
+      "name_th": "ซี่โครงหมูอ่อนสไลด์",
+      "name_en": "Sliced pork spare ribs",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-009",
+      "sap_code": "1000002443",
+      "category": "pork",
+      "name_th": "สะโพกหมู",
+      "name_en": "Pork leg (ham)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-010",
+      "sap_code": "1000004563",
+      "category": "pork",
+      "name_th": "ไหล่หมู",
+      "name_en": "Pork shoulder",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-011",
+      "sap_code": "1000013782",
+      "category": "pork",
+      "name_th": "สันคอหมู",
+      "name_en": "Pork collar (neck end)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-012",
+      "sap_code": "1000004557",
+      "category": "pork",
+      "name_th": "สันคอหมูสไลด์",
+      "name_en": "Sliced pork collar",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-013",
+      "sap_code": "1000004559",
+      "category": "pork",
+      "name_th": "สันนอกหมูสไลด์",
+      "name_en": "Sliced pork loin",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-014",
+      "sap_code": "1000004549",
+      "category": "pork",
+      "name_th": "สันนอกหมู",
+      "name_en": "Pork loin",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-015",
+      "sap_code": "1000013853",
+      "category": "pork",
+      "name_th": "สันในหมู",
+      "name_en": "Pork tenderloin",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-016",
+      "sap_code": "1000003896",
+      "category": "pork",
+      "name_th": "สามชั้นแผ่น B-7",
+      "name_en": "Pork belly sheet B-7",
+      "description_th": "สามชั้นเส้น",
+      "description_en": "Belly strips",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-017",
+      "sap_code": "1000004630",
+      "category": "pork",
+      "name_th": "สามชั้นแผ่น B-9",
+      "name_en": "Pork belly sheet B-9",
+      "description_th": "สามชั้นแผ่นมีหนัง",
+      "description_en": "Skin-on belly sheet",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-018",
+      "sap_code": "1000004544",
+      "category": "pork",
+      "name_th": "สามชั้นแผ่น-1",
+      "name_en": "Pork belly sheet no. 1",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-019",
+      "sap_code": "1000004717",
+      "category": "pork",
+      "name_th": "สามชั้นลอกหนัง B-5",
+      "name_en": "Skinless pork belly B-5",
+      "description_th": "สามชั้นแผ่นลอกหนัง",
+      "description_en": "Skinless belly sheet",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-020",
+      "sap_code": "1000004558",
+      "category": "pork",
+      "name_th": "สามชั้นลอกหนังสไลด์",
+      "name_en": "Sliced skinless pork belly",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-021",
+      "sap_code": "1000004533",
+      "category": "pork",
+      "name_th": "หมูบด A มัน 5 %",
+      "name_en": "Minced pork A (5% fat)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-022",
+      "sap_code": "1000003897",
+      "category": "pork",
+      "name_th": "หมูบด B มัน 10 %",
+      "name_en": "Minced pork B (10% fat)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-023",
+      "sap_code": "1000043113",
+      "category": "pork",
+      "name_th": "หมูบด D มัน 30%",
+      "name_en": "Minced pork D (30% fat)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-024",
+      "sap_code": "1000006880",
+      "category": "pork",
+      "name_th": "กระดูกขาตั้งหมู",
+      "name_en": "Pork leg bones",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-025",
+      "sap_code": "1000010869",
+      "category": "pork",
+      "name_th": "กระดูกแว่นตาหมู",
+      "name_en": "Pork pelvic bone",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-026",
+      "sap_code": "1000003746",
+      "category": "pork",
+      "name_th": "ไส้อ่อนหมู",
+      "name_en": "Pork small intestine",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-027",
+      "sap_code": "1000002607",
+      "category": "pork",
+      "name_th": "ไตหมูสไลด์",
+      "name_en": "Sliced pork kidney",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-028",
+      "sap_code": "1000020124",
+      "category": "pork",
+      "name_th": "ตับหมูก้อน",
+      "name_en": "Pork liver, whole piece",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-029",
+      "sap_code": "1000020133",
+      "category": "pork",
+      "name_th": "กระเพาะหมู",
+      "name_en": "Pork stomach",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-030",
+      "sap_code": "1000005274",
+      "category": "pork",
+      "name_th": "ตับหมูสไลด์",
+      "name_en": "Sliced pork liver",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-031",
+      "sap_code": "1000005788",
+      "category": "pork",
+      "name_th": "ขาหมูผา H-7",
+      "name_en": "Split pork hock H-7",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-032",
+      "sap_code": "1000004554",
+      "category": "pork",
+      "name_th": "กระดูกอ่อนหมู S",
+      "name_en": "Pork soft bone (cartilage) S",
+      "description_th": "กระดูกใบพาย",
+      "description_en": "Blade-bone cartilage",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "PK-033",
+      "sap_code": "1000005787",
+      "category": "pork",
+      "name_th": "สะโพกหมู-CUT",
+      "name_en": "Pork leg, cut",
+      "unit": "kg",
+      "image": "assets/products/placeholder-pork.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-001",
+      "sap_code": "1000005178",
+      "category": "chicken",
+      "name_th": "ขาชีไก่ตัดเล็บ",
+      "name_en": "Chicken feet, nails trimmed",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-002",
+      "sap_code": "1000005228",
+      "category": "chicken",
+      "name_th": "เครื่องในไก่ผ่า",
+      "name_en": "Chicken giblets, split",
+      "description_th": "เครื่องในรวม ตับ กึ๋น หัวใจ",
+      "description_en": "Mixed giblets: liver, gizzard, heart",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-003",
+      "sap_code": "1000004677",
+      "category": "chicken",
+      "name_th": "โครงไก่",
+      "name_en": "Chicken bone",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-004",
+      "sap_code": "1000004716",
+      "category": "chicken",
+      "name_th": "ตับไก่",
+      "name_en": "Chicken liver",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-005",
+      "sap_code": "1000004675",
+      "category": "chicken",
+      "name_th": "น่องติดสะโพกไก่",
+      "name_en": "Chicken bone-in leg",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-006",
+      "sap_code": "1000004806",
+      "category": "chicken",
+      "name_th": "เนื้ออกไก่",
+      "name_en": "Boneless chicken breast",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-007",
+      "sap_code": "1000006091",
+      "category": "chicken",
+      "name_th": "ไก่บด",
+      "name_en": "Minced chicken",
+      "description_th": "เนื้อไก่บดล้วน2 Kg/PAC",
+      "description_en": "100% minced chicken, 2 kg/pack",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-008",
+      "sap_code": "1000004671",
+      "category": "chicken",
+      "name_th": "เนื้ออกไก่ลอกหนัง",
+      "name_en": "Chicken breast without skin",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-009",
+      "sap_code": "1000004679",
+      "category": "chicken",
+      "name_th": "ปีกกลาง",
+      "name_en": "Chicken middle wing",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-010",
+      "sap_code": "1000005370",
+      "category": "chicken",
+      "name_th": "ปีกเต็มไก่",
+      "name_en": "Whole chicken wing (3JW)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-011",
+      "sap_code": "1000004709",
+      "category": "chicken",
+      "name_th": "ปีกบนไก่",
+      "name_en": "Chicken drumette",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-012",
+      "sap_code": "1000004809",
+      "category": "chicken",
+      "name_th": "ปีกปลายไก่",
+      "name_en": "Chicken wing tip",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-013",
+      "sap_code": "1000005444",
+      "category": "chicken",
+      "name_th": "เศษไก่บีบีติดหนัง",
+      "name_en": "Chicken trimmings, skin-on (BB)",
+      "description_th": "เศษใหญ่เสียบไม้ได้",
+      "description_en": "Large pieces, good for skewers",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-014",
+      "sap_code": "1000005732",
+      "category": "chicken",
+      "name_th": "เศษไก่บีแอลเบอร์1",
+      "name_en": "Boneless chicken trimmings no. 1",
+      "description_th": "เศษเล็ก",
+      "description_en": "Small pieces",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-015",
+      "sap_code": "1000004673",
+      "category": "chicken",
+      "name_th": "สะโพกล้วนไก่",
+      "name_en": "Chicken thigh",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-016",
+      "sap_code": "1000004672",
+      "category": "chicken",
+      "name_th": "สันในไก่",
+      "name_en": "Chicken fillet (tenderloin)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-017",
+      "sap_code": "1000005628",
+      "category": "chicken",
+      "name_th": "หนังไก่แผ่นบีบี",
+      "name_en": "Chicken skin sheet (BB)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-018",
+      "sap_code": "1000004452",
+      "category": "chicken",
+      "name_th": "น่องล้วนไก่",
+      "name_en": "Chicken drumstick",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-019",
+      "sap_code": "1000004812",
+      "category": "chicken",
+      "name_th": "เนื้อไก่บีแอล",
+      "name_en": "Boneless chicken (BL)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-020",
+      "sap_code": "1000054722",
+      "category": "chicken",
+      "name_th": "สะโพกล้วนไก่เลาะกระดูก",
+      "name_en": "Boneless chicken thigh (BL-Thigh)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-021",
+      "sap_code": "1000005686",
+      "category": "chicken",
+      "name_th": "เอ็นฮ่องเต้",
+      "name_en": "Chicken tender (hong tae)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-022",
+      "sap_code": "1000005175",
+      "category": "chicken",
+      "name_th": "ขาชีไก่",
+      "name_en": "Chicken feet, nails on",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-023",
+      "sap_code": "1000053261",
+      "category": "chicken",
+      "name_th": "ไก่NY (ไก่ล้วง)",
+      "name_en": "NY chicken (eviscerated)",
+      "description_th": "ตัดหัว ตัดขา ล้วงเครื่องใน",
+      "description_en": "Head and feet off, giblets removed",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-024",
+      "sap_code": "1000006141",
+      "category": "chicken",
+      "name_th": "เอ็นแก้วไก่",
+      "name_en": "Chicken keel cartilage",
+      "description_th": "มีเครื่องใน",
+      "description_en": "With giblets",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-025",
+      "sap_code": "1000006768",
+      "category": "chicken",
+      "name_th": "สะโพกไก่หั่นชิ้น",
+      "name_en": "Diced chicken thigh",
+      "description_th": "BLK 20-25 g",
+      "description_en": "Pieces 20-25 g",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "CK-026",
+      "sap_code": "1000053261",
+      "category": "chicken",
+      "name_th": "ไก่ล้วง",
+      "name_en": "Whole chicken (eviscerated)",
+      "unit": "kg",
+      "image": "assets/products/placeholder-chicken.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-001",
+      "category": "egg",
+      "name_th": "เบอร์ 0 (30ฟอง)",
+      "name_en": "Eggs size 0 (30)",
+      "unit": "tray",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-002",
+      "category": "egg",
+      "name_th": "เบอร์ 1 (30ฟอง)",
+      "name_en": "Eggs size 1 (30)",
+      "unit": "tray",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-003",
+      "category": "egg",
+      "name_th": "เบอร์ 2 (30ฟอง)",
+      "name_en": "Eggs size 2 (30)",
+      "unit": "tray",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-004",
+      "category": "egg",
+      "name_th": "เบอร์ 3 (30ฟอง)",
+      "name_en": "Eggs size 3 (30)",
+      "unit": "tray",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-005",
+      "category": "egg",
+      "name_th": "เบอร์ 4 (30ฟอง)",
+      "name_en": "Eggs size 4 (30)",
+      "unit": "tray",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    },
+    {
+      "sku": "EG-006",
+      "category": "egg",
+      "name_th": "X-Tra Large 10 ฟอง",
+      "name_en": "Extra-large eggs, 10-pack",
+      "unit": "pack",
+      "image": "assets/products/placeholder-egg.svg",
+      "active": true
+    }
+  ]
+}

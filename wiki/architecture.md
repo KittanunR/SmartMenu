@@ -1,0 +1,13 @@
+# Architecture
+- 2026-10-22: Decided the site only reads data files; it never knows who extracted prices.
+  - `data/catalog.json` = stable product info; `data/prices/YYYY-MM-DD.json` + `latest.json` = weekly prices keyed by SKU.
+  - JSON Schemas + `scripts/validate.mjs` gate every update; `scripts/publish-prices.mjs` is the only way in.
+  - Extractor = Claude (2026-10-22, pilot) → Benny (Betagro AI, after pilot). Contract in `EXTRACTOR_CONTRACT.md`.
+- Source: scaffold built by subagent in /home/claude/price-menu (cloud), 2026-10-22.
+- As of `price-menu@bc3837f` (cloud, not yet pushed, 2026-10-22): scaffold done — 16 placeholder SKUs, validator with no dependencies (rejects errors, warns on >30% price change / missing SKU), CI workflow, QR script, Thai font stored in the repo. Screens in docs/screens/.
+- 2026-10-22: Real price sheet (week 17–23/10/2026) replaced the placeholder data. Contract extended for tiered prices.
+  - Prices: `{sku, qty_unit: kg|tray|pack, tiers:[{min_qty, max_qty?, price}]}`; file gets `valid_from`/`valid_to` (`effective_date` = `valid_from`).
+  - Catalog: our `sku` stays the key; Betagro `sap_code` added (not unique — 1000053261 appears twice on the sheet), plus `description_th/en` and `unit` (replaces `unit_th/unit_en`).
+  - Validator: tiers ascending + non-overlapping (error); price rising with qty, outlier >2× category median, duplicate SAP code (warning). Friday check dropped: the sheet week runs Saturday–Friday.
+  - Site: headline = smallest-qty tier, other tiers in a line under it; banner shows the validity range (TH พ.ศ. / EN); empty categories hidden; search box.
+  - Seed file `data/prices/2026-10-16.json` and the 16 placeholder SKUs removed (never published).

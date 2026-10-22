@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://betagro-shop.example/schema/prices.schema.json",
+  "title": "Betagro Shop weekly price list",
+  "description": "Output of any extractor (Claude, Benny, a human). One file per price week.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["effective_date", "valid_from", "valid_to", "source_file", "extracted_by", "currency", "prices"],
+  "properties": {
+    "effective_date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+      "description": "Same as valid_from. Names the file data/prices/<effective_date>.json."
+    },
+    "valid_from": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+      "description": "First day the prices apply (YYYY-MM-DD, Gregorian)"
+    },
+    "valid_to": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+      "description": "Last day the prices apply, inclusive (YYYY-MM-DD, Gregorian)"
+    },
+    "source_file": { "type": "string", "minLength": 1, "description": "File name(s) of the PDF/image the prices came from" },
+    "extracted_by": { "type": "string", "enum": ["claude", "benny", "manual"] },
+    "currency": { "const": "THB" },
+    "prices": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/price" }
+    }
+  },
+  "$defs": {
+    "price": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sku", "qty_unit", "tiers"],
+      "properties": {
+        "sku": { "type": "string", "pattern": "^[A-Z]{2}-[0-9]{3,}$" },
+        "qty_unit": { "type": "string", "enum": ["kg", "tray", "pack"], "description": "Unit for both min_qty/max_qty and the price (baht per kg / tray / pack)" },
+        "tiers": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Quantity breaks, ascending by min_qty. Only columns that have a number on the sheet.",
+          "items": { "$ref": "#/$defs/tier" }
+        }
+      }
+    },
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_qty", "price"],
+      "properties": {
+        "min_qty": { "type": "number", "exclusiveMinimum": 0, "description": "Order quantity from which this price applies" },
+        "max_qty": { "type": "number", "exclusiveMinimum": 0, "description": "Optional upper bound, inclusive. Omit on the last tier (open-ended)." },
+        "price": { "type": "number", "exclusiveMinimum": 0, "description": "Baht per qty_unit, max 2 decimals" }
+      }
+    }
+  }
+}
