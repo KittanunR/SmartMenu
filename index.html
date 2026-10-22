@@ -3,47 +3,97 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0A5A32">
+  <meta name="theme-color" content="#1A4A20">
   <meta name="description" content="Betagro Shop Sukhumvit — weekly wholesale prices for pork, chicken and eggs, with quantity discounts.">
   <title>Betagro Shop Price Menu</title>
-  <link rel="preload" href="assets/fonts/plex-thai-thai-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/prompt-latin-300.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
 <body>
-  <header class="masthead">
-    <div class="masthead__bar">
-      <p class="shop" id="shop-name">Betagro Shop</p>
+  <header class="cover">
+    <div class="cover__top">
+      <p class="wordmark"><span class="wordmark__brand" lang="en">Betagro Shop</span><span class="wordmark__branch" id="shop-branch"></span></p>
       <div class="lang" role="group" aria-label="Language / ภาษา">
         <button type="button" data-lang="th" lang="th">ไทย</button>
         <button type="button" data-lang="en" lang="en">EN</button>
       </div>
     </div>
-    <h1 class="asof">
-      <span class="asof__label" id="asof-label"></span>
-      <span class="asof__date" id="asof-date"></span>
+    <h1 class="cover__title">
+      <span class="cover__label" id="asof-label"></span>
+      <span class="cover__date" id="asof-date"></span>
     </h1>
-    <p class="cadence" id="cadence"></p>
+    <p class="cover__cadence" id="cadence"></p>
   </header>
 
-  <nav class="tabs" role="tablist" id="tabs" aria-label="Categories"></nav>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
 
-  <main class="sheet">
+  <main class="page" id="page">
     <div class="notice" id="notice" role="status" hidden></div>
+
+    <div class="opener" id="opener">
+      <h2 class="opener__title" id="opener-title">
+        <span class="opener__en" id="opener-en" lang="en"></span>
+        <span class="opener__th" id="opener-th" lang="th"></span>
+      </h2>
+      <span class="opener__rule" aria-hidden="true"></span>
+      <span class="badge" id="badge" aria-hidden="true"></span>
+    </div>
+
     <div class="search">
-      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zm5.3-2.2L21 21"/></svg>
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zm5.3-2.2L21 21"/></svg>
       <input class="search__input" id="search" type="search" autocomplete="off" enterkeyhint="search" aria-label="Search products / ค้นหาสินค้า">
     </div>
-    <ul class="list" id="list" role="tabpanel" aria-live="polite"></ul>
-    <p class="fineprint" id="fineprint"></p>
+
+    <ul class="grid" id="grid" role="tabpanel" aria-live="polite"></ul>
+    <div class="nomatch" id="nomatch" hidden></div>
+
     <noscript><p class="notice">Please enable JavaScript to see prices. / กรุณาเปิด JavaScript เพื่อดูราคา</p></noscript>
   </main>
 
-  <div class="cta-dock">
-    <a class="cta" id="line-cta" href="#" target="_blank" rel="noopener">
-      <svg class="cta__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.48 3 2 6.6 2 11.04c0 3.98 3.55 7.31 8.35 7.94.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.4 22 12.8 22 11.04 22 6.6 17.52 3 12 3zM8.3 13.4H6.3a.52.52 0 0 1-.52-.52V9.04a.52.52 0 1 1 1.04 0v3.32H8.3a.52.52 0 1 1 0 1.04zm2.07-.52a.52.52 0 1 1-1.04 0V9.04a.52.52 0 1 1 1.04 0v3.84zm4.8 0a.52.52 0 0 1-.94.31l-1.97-2.68v2.37a.52.52 0 1 1-1.04 0V9.04a.52.52 0 0 1 .94-.31l1.97 2.68V9.04a.52.52 0 1 1 1.04 0v3.84zm3.23-2.44a.52.52 0 1 1 0 1.04h-1.48v.88h1.48a.52.52 0 1 1 0 1.04H16.4a.52.52 0 0 1-.52-.52V9.04c0-.29.23-.52.52-.52h2a.52.52 0 1 1 0 1.04h-1.48v.88h1.48z"/></svg>
+  <footer class="colophon">
+    <p class="colophon__note" id="fineprint"></p>
+    <p class="colophon__mark" id="colophon"></p>
+  </footer>
+
+  <div class="dock">
+    <a class="line-btn" id="line-cta" href="#" target="_blank" rel="noopener">
+      <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
       <span id="cta-label">สั่งซื้อทาง LINE</span>
     </a>
   </div>
+
+  <dialog class="sheet" id="sheet" aria-labelledby="sheet-name">
+    <div class="sheet__body">
+      <button class="sheet__close" id="sheet-close" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        <span class="sr-only" id="sheet-close-label">ปิด</span>
+      </button>
+      <div class="sheet__plate"><img class="sheet__img" id="sheet-img" alt="" width="600" height="600" decoding="async"></div>
+      <p class="sheet__code" id="sheet-code"></p>
+      <h2 class="sheet__name" id="sheet-name"></h2>
+      <p class="sheet__alt" id="sheet-alt"></p>
+      <p class="sheet__desc" id="sheet-desc"></p>
+      <table class="tiers-table" id="sheet-table">
+        <thead><tr><th scope="col" id="th-qty"></th><th scope="col" id="th-price"></th><th scope="col" id="th-save"></th></tr></thead>
+        <tbody id="sheet-tiers"></tbody>
+      </table>
+      <a class="order-btn" id="sheet-order" href="#" target="_blank" rel="noopener">
+        <svg class="line-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-line"/></svg>
+        <span id="sheet-order-label"></span>
+      </a>
+    </div>
+  </dialog>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-line" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.6 2 11.04c0 3.98 3.55 7.31 8.35 7.94.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.4 22 12.8 22 11.04 22 6.6 17.52 3 12 3zM8.3 13.4H6.3a.52.52 0 0 1-.52-.52V9.04a.52.52 0 1 1 1.04 0v3.32H8.3a.52.52 0 1 1 0 1.04zm2.07-.52a.52.52 0 1 1-1.04 0V9.04a.52.52 0 1 1 1.04 0v3.84zm4.8 0a.52.52 0 0 1-.94.31l-1.97-2.68v2.37a.52.52 0 1 1-1.04 0V9.04a.52.52 0 0 1 .94-.31l1.97 2.68V9.04a.52.52 0 1 1 1.04 0v3.84zm3.23-2.44a.52.52 0 1 1 0 1.04h-1.48v.88h1.48a.52.52 0 1 1 0 1.04H16.4a.52.52 0 0 1-.52-.52V9.04c0-.29.23-.52.52-.52h2a.52.52 0 1 1 0 1.04h-1.48v.88h1.48z"/></symbol>
+    <!-- Category badges: simple self-drawn silhouettes, white on the leaf disc. -->
+    <symbol id="i-pork" viewBox="0 0 48 48"><g transform="translate(24 25) scale(1.14) translate(-24 -25)"><g fill="currentColor"><ellipse cx="22" cy="26" rx="12" ry="8.5"/><circle cx="32.5" cy="23.5" r="6.5"/><rect x="37" y="21" width="5" height="6.5" rx="2"/><path d="M28.5 18.5l2.5-6 3.5 6.2z"/><rect x="13" y="30" width="3.6" height="8" rx="1.2"/><rect x="18.5" y="31" width="3.6" height="7" rx="1.2"/><rect x="25" y="31" width="3.6" height="7" rx="1.2"/><rect x="30.4" y="29" width="3.6" height="9" rx="1.2"/></g><path d="M10.5 24.5c-2.6.4-3.4-2.6-1.2-3.2 1.6-.4 2 1.6.6 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="33.6" cy="21.6" r="1.1" fill="#78B040"/></g></symbol>
+    <symbol id="i-chicken" viewBox="0 0 48 48"><g fill="currentColor"><circle cx="13.5" cy="10" r="2"/><circle cx="16.5" cy="8.8" r="2.2"/><circle cx="19.5" cy="10.2" r="2"/><circle cx="16.5" cy="16" r="5.6"/><path d="M11.2 14.6l-4.4 2.2 4.6 1.6z"/><path d="M12 19.5c-2 9 3.5 17.5 13 17.5 8.4 0 13.6-5.5 14.6-13.4L42 11.5l-5.4 4-2.8-5.5-2 7.3c-4 4-9.2 5.2-13.6 2.4z"/><rect x="21.6" y="35.5" width="2.2" height="5.5"/><rect x="28.4" y="35.5" width="2.2" height="5.5"/><path d="M19.5 41h6v1.6h-6zM26.3 41h6v1.6h-6z"/></g><circle cx="15.6" cy="15.4" r="1.1" fill="#78B040"/></symbol>
+    <symbol id="i-egg" viewBox="0 0 48 48"><path fill="currentColor" d="M24 7c7.4 0 12.5 12.6 12.5 20.6C36.5 35 31 40.5 24 40.5S11.5 35 11.5 27.6C11.5 19.6 16.6 7 24 7z"/></symbol>
+    <symbol id="i-fish" viewBox="0 0 48 48"><path fill="currentColor" d="M6 24c6-8 16-10 24-6l9-6v24l-9-6c-8 4-18 2-24-6z"/></symbol>
+  </svg>
 </body>
 </html>

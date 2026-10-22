@@ -69,6 +69,7 @@ export function checkCatalog(catalog) {
     if (!p.sku.startsWith(`${SKU_PREFIX[p.category]}-`)) {
       errors.push(`catalog: ${p.sku} is in "${p.category}" so it must start with ${SKU_PREFIX[p.category]}-`);
     }
+    // Missing image on an active, priced product is an ERROR in checkPhotos(); here it is only a warning.
     if (!existsSync(join(ROOT, p.image))) warnings.push(`catalog: ${p.sku} image not found: ${p.image}`);
     if (p.sap_code) {
       if (p.sap_code.length !== SAP_CODE_LENGTH) {
@@ -86,6 +87,26 @@ export function checkCatalog(catalog) {
   const placeholders = catalog.products.filter((p) => p.placeholder).length;
   if (placeholders) warnings.push(`catalog: ${placeholders} placeholder product(s) still in the catalog`);
   return { errors, warnings };
+}
+
+/**
+ * Petch's rule (2026-10-22): every product that shows a price must show a real photo.
+ * Active + priced product -> image file must exist and photo_match must be set
+ * (a product without photo_match still has a placeholder, not a catalogue photo).
+ */
+export function checkPhotos(prices, catalog, label = 'prices') {
+  const errors = [];
+  const bySku = new Map(catalog.products.map((p) => [p.sku, p]));
+  for (const row of prices.prices) {
+    const p = bySku.get(row.sku);
+    if (!p || !p.active) continue;
+    if (!existsSync(join(ROOT, p.image))) {
+      errors.push(`${label}: ${p.sku} (${p.name_th}) is priced but its image file is missing: ${p.image}`);
+    } else if (!p.photo_match) {
+      errors.push(`${label}: ${p.sku} (${p.name_th}) is priced but has no real photo (photo_match not set, image ${p.image}) — cut one from the catalogue`);
+    }
+  }
+  return { errors, warnings: [] };
 }
 
 function checkTiers(label, row) {
@@ -173,6 +194,9 @@ export function checkPrices(prices, catalog, previous = null, fileDate = null) {
     if (p.active && !priced.has(p.sku)) warnings.push(`${label}: active product ${p.sku} (${p.name_en}) has no price — menu will show "ask for price"`);
   }
 
+  // Incoming file (publish): every active priced product needs a photo. checkRepo runs this for the newest file.
+  if (!fileDate) errors.push(...checkPhotos(prices, catalog, label).errors);
+
   // Outliers: base price far above the rest of its category (same unit).
   const groups = new Map();
   for (const row of prices.prices) {
@@ -240,6 +264,8 @@ export function checkRepo() {
   });
 
   const newest = files[files.length - 1];
+  const newestData = readJson(newest.path);
+  if (!newestData.error) errors.push(...checkPhotos(newestData.data, cat.data, `prices ${newest.date}`).errors);
   const latest = readJson(LATEST_PATH);
   if (latest.error) errors.push(`${latest.error} (run scripts/publish-prices.mjs)`);
   else if (JSON.stringify(latest.data) !== JSON.stringify(readJson(newest.path).data)) {

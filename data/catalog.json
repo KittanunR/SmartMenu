@@ -8,7 +8,8 @@
       "name_th": "มันแข็งหมู",
       "name_en": "Pork back fat",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-001.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -18,7 +19,8 @@
       "name_th": "กระดูกเล้งAQ",
       "name_en": "Pork spine bones (AQ)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-002.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -28,7 +30,8 @@
       "name_th": "กระดูกเล้งAN",
       "name_en": "Pork spine bones (AN)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-003.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -38,7 +41,8 @@
       "name_th": "ขั้วตับหมู",
       "name_en": "Pork skirt (hanging tender)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-004.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -48,7 +52,8 @@
       "name_th": "คอหมู",
       "name_en": "Pork jowl (neck)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-005.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -58,7 +63,8 @@
       "name_th": "ซี่โครงหมูสไลด์",
       "name_en": "Sliced pork ribs",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-006.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -68,7 +74,8 @@
       "name_th": "ซี่โครงหมูอ่อนA",
       "name_en": "Pork spare ribs A",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-007.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -78,7 +85,8 @@
       "name_th": "ซี่โครงหมูอ่อนสไลด์",
       "name_en": "Sliced pork spare ribs",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-008.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -88,7 +96,8 @@
       "name_th": "สะโพกหมู",
       "name_en": "Pork leg (ham)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-009.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -98,7 +107,8 @@
       "name_th": "ไหล่หมู",
       "name_en": "Pork shoulder",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-010.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -108,7 +118,8 @@
       "name_th": "สันคอหมู",
       "name_en": "Pork collar (neck end)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-011.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -118,7 +129,8 @@
       "name_th": "สันคอหมูสไลด์",
       "name_en": "Sliced pork collar",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-012.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -128,7 +140,8 @@
       "name_th": "สันนอกหมูสไลด์",
       "name_en": "Sliced pork loin",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-013.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -138,7 +151,8 @@
       "name_th": "สันนอกหมู",
       "name_en": "Pork loin",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-014.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -148,7 +162,8 @@
       "name_th": "สันในหมู",
       "name_en": "Pork tenderloin",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-015.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -160,7 +175,8 @@
       "description_th": "สามชั้นเส้น",
       "description_en": "Belly strips",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-016.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -172,7 +188,8 @@
       "description_th": "สามชั้นแผ่นมีหนัง",
       "description_en": "Skin-on belly sheet",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-017.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -182,7 +199,8 @@
       "name_th": "สามชั้นแผ่น-1",
       "name_en": "Pork belly sheet no. 1",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-018.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -194,7 +212,8 @@
       "description_th": "สามชั้นแผ่นลอกหนัง",
       "description_en": "Skinless belly sheet",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-019.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -204,7 +223,8 @@
       "name_th": "สามชั้นลอกหนังสไลด์",
       "name_en": "Sliced skinless pork belly",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-020.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -214,7 +234,8 @@
       "name_th": "หมูบด A มัน 5 %",
       "name_en": "Minced pork A (5% fat)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-021.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -224,7 +245,8 @@
       "name_th": "หมูบด B มัน 10 %",
       "name_en": "Minced pork B (10% fat)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-022.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -234,7 +256,8 @@
       "name_th": "หมูบด D มัน 30%",
       "name_en": "Minced pork D (30% fat)",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-023.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -244,7 +267,8 @@
       "name_th": "กระดูกขาตั้งหมู",
       "name_en": "Pork leg bones",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-024.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -254,7 +278,8 @@
       "name_th": "กระดูกแว่นตาหมู",
       "name_en": "Pork pelvic bone",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-025.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -264,7 +289,8 @@
       "name_th": "ไส้อ่อนหมู",
       "name_en": "Pork small intestine",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-026.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -274,7 +300,8 @@
       "name_th": "ไตหมูสไลด์",
       "name_en": "Sliced pork kidney",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-027.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -284,7 +311,8 @@
       "name_th": "ตับหมูก้อน",
       "name_en": "Pork liver, whole piece",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-028.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -294,7 +322,8 @@
       "name_th": "กระเพาะหมู",
       "name_en": "Pork stomach",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-029.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -304,7 +333,8 @@
       "name_th": "ตับหมูสไลด์",
       "name_en": "Sliced pork liver",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-030.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -314,7 +344,8 @@
       "name_th": "ขาหมูผา H-7",
       "name_en": "Split pork hock H-7",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-031.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -326,7 +357,8 @@
       "description_th": "กระดูกใบพาย",
       "description_en": "Blade-bone cartilage",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-032.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -336,7 +368,8 @@
       "name_th": "สะโพกหมู-CUT",
       "name_en": "Pork leg, cut",
       "unit": "kg",
-      "image": "assets/products/placeholder-pork.svg",
+      "image": "assets/products/PK-033.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -346,7 +379,8 @@
       "name_th": "ขาชีไก่ตัดเล็บ",
       "name_en": "Chicken feet, nails trimmed",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-001.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -358,7 +392,8 @@
       "description_th": "เครื่องในรวม ตับ กึ๋น หัวใจ",
       "description_en": "Mixed giblets: liver, gizzard, heart",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-002.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -368,7 +403,8 @@
       "name_th": "โครงไก่",
       "name_en": "Chicken bone",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-003.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -378,7 +414,8 @@
       "name_th": "ตับไก่",
       "name_en": "Chicken liver",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-004.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -388,7 +425,8 @@
       "name_th": "น่องติดสะโพกไก่",
       "name_en": "Chicken bone-in leg",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-005.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -398,7 +436,8 @@
       "name_th": "เนื้ออกไก่",
       "name_en": "Boneless chicken breast",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-006.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -410,7 +449,8 @@
       "description_th": "เนื้อไก่บดล้วน2 Kg/PAC",
       "description_en": "100% minced chicken, 2 kg/pack",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-007.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -420,7 +460,8 @@
       "name_th": "เนื้ออกไก่ลอกหนัง",
       "name_en": "Chicken breast without skin",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-008.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -430,7 +471,8 @@
       "name_th": "ปีกกลาง",
       "name_en": "Chicken middle wing",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-009.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -440,7 +482,8 @@
       "name_th": "ปีกเต็มไก่",
       "name_en": "Whole chicken wing (3JW)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-010.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -450,7 +493,8 @@
       "name_th": "ปีกบนไก่",
       "name_en": "Chicken drumette",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-011.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -460,7 +504,8 @@
       "name_th": "ปีกปลายไก่",
       "name_en": "Chicken wing tip",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-012.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -472,7 +517,8 @@
       "description_th": "เศษใหญ่เสียบไม้ได้",
       "description_en": "Large pieces, good for skewers",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-013.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -484,7 +530,8 @@
       "description_th": "เศษเล็ก",
       "description_en": "Small pieces",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-014.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -494,7 +541,8 @@
       "name_th": "สะโพกล้วนไก่",
       "name_en": "Chicken thigh",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-015.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -504,7 +552,8 @@
       "name_th": "สันในไก่",
       "name_en": "Chicken fillet (tenderloin)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-016.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -514,7 +563,8 @@
       "name_th": "หนังไก่แผ่นบีบี",
       "name_en": "Chicken skin sheet (BB)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-017.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -524,7 +574,8 @@
       "name_th": "น่องล้วนไก่",
       "name_en": "Chicken drumstick",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-018.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -534,7 +585,8 @@
       "name_th": "เนื้อไก่บีแอล",
       "name_en": "Boneless chicken (BL)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-019.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -544,7 +596,8 @@
       "name_th": "สะโพกล้วนไก่เลาะกระดูก",
       "name_en": "Boneless chicken thigh (BL-Thigh)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-020.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -554,7 +607,8 @@
       "name_th": "เอ็นฮ่องเต้",
       "name_en": "Chicken tender (hong tae)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-021.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -564,7 +618,8 @@
       "name_th": "ขาชีไก่",
       "name_en": "Chicken feet, nails on",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-022.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -576,7 +631,8 @@
       "description_th": "ตัดหัว ตัดขา ล้วงเครื่องใน",
       "description_en": "Head and feet off, giblets removed",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-023.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -588,7 +644,8 @@
       "description_th": "มีเครื่องใน",
       "description_en": "With giblets",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-024.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -600,7 +657,8 @@
       "description_th": "BLK 20-25 g",
       "description_en": "Pieces 20-25 g",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-025.webp",
+      "photo_match": "close",
       "active": true
     },
     {
@@ -610,7 +668,8 @@
       "name_th": "ไก่ล้วง",
       "name_en": "Whole chicken (eviscerated)",
       "unit": "kg",
-      "image": "assets/products/placeholder-chicken.svg",
+      "image": "assets/products/CK-026.webp",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -619,7 +678,8 @@
       "name_th": "เบอร์ 0 (30ฟอง)",
       "name_en": "Eggs size 0 (30)",
       "unit": "tray",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-001.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -628,7 +688,8 @@
       "name_th": "เบอร์ 1 (30ฟอง)",
       "name_en": "Eggs size 1 (30)",
       "unit": "tray",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-002.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -637,7 +698,8 @@
       "name_th": "เบอร์ 2 (30ฟอง)",
       "name_en": "Eggs size 2 (30)",
       "unit": "tray",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-003.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -646,7 +708,8 @@
       "name_th": "เบอร์ 3 (30ฟอง)",
       "name_en": "Eggs size 3 (30)",
       "unit": "tray",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-004.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -655,7 +718,8 @@
       "name_th": "เบอร์ 4 (30ฟอง)",
       "name_en": "Eggs size 4 (30)",
       "unit": "tray",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-005.webp",
+      "photo_match": "exact",
       "active": true
     },
     {
@@ -664,7 +728,8 @@
       "name_th": "X-Tra Large 10 ฟอง",
       "name_en": "Extra-large eggs, 10-pack",
       "unit": "pack",
-      "image": "assets/products/placeholder-egg.svg",
+      "image": "assets/products/EG-006.webp",
+      "photo_match": "close",
       "active": true
     }
   ]

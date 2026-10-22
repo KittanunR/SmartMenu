@@ -28,7 +28,8 @@
         "description_th": { "type": "string", "minLength": 1, "description": "Optional detail from the sheet's ลักษณะสินค้า column" },
         "description_en": { "type": "string", "minLength": 1 },
         "unit": { "type": "string", "enum": ["kg", "tray", "pack"], "description": "What one price is quoted per; prices[].qty_unit should match. tray = 30 eggs." },
-        "image": { "type": "string", "pattern": "^assets/products/[A-Za-z0-9._-]+\\.(svg|png|jpg|jpeg|webp)$" },
+        "image": { "type": "string", "pattern": "^assets/products/[A-Za-z0-9._-]+\\.(svg|png|jpg|jpeg|webp)$", "description": "Product photo, normally assets/products/<SKU>.webp cut from the Betagro catalogue. An active, priced product whose image file is missing fails validation." },
+        "photo_match": { "type": "string", "enum": ["exact", "close", "similar"], "description": "How well the photo matches this product, judged by Thai name/cut only (catalogue codes are ignored): exact = same cut; close = same cut, different form or grade (sliced, skinless, trimmed); similar = no matching product in the catalogue, nearest same-category photo. Leave it out only while the image is a placeholder; an active, priced product without it fails validation." },
         "active": { "type": "boolean", "description": "false = hidden from the menu, history kept" },
         "placeholder": { "type": "boolean", "description": "true = seed/demo item, replace with a real Betagro SKU" }
       }

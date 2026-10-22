@@ -7,11 +7,11 @@ for this week, with quantity discounts, in Thai or English, with a button to ord
 เมนูราคาหน้าเดียวสำหรับทีมขาย B2B ของ Betagro Shop สุขุมวิท พนักงานขายโชว์ QR ลูกค้าสแกนแล้วเห็นราคาหมู ไก่ ไข่ ปลา
 ของสัปดาห์นี้ เป็นภาษาไทยหรืออังกฤษ พร้อมปุ่มสั่งซื้อทาง LINE
 
-| Phone view (TH) | Phone view (EN) |
-|---|---|
-| ![Thai](docs/screens/menu-th-pork-390.png) | ![English](docs/screens/menu-en-chicken-390.png) |
+| Phone view (TH) | Phone view (EN) | Product sheet |
+|---|---|---|
+| ![Thai](docs/screens/v2-th-pork-top.png) | ![English](docs/screens/v2-en-eggs.png) | ![Sheet](docs/screens/v2-sheet-open.png) |
 
-More in [`docs/screens/`](docs/screens/) (pork, chicken, eggs × TH/EN). A category with no products is hidden.
+More in [`docs/screens/`](docs/screens/) (`v2-*` = current design, `menu-*` = v1). A category with no products is hidden.
 
 ## Weekly flow / ขั้นตอนทุกสัปดาห์
 
@@ -47,7 +47,7 @@ The sheet covers one week, Saturday to Friday (e.g. 17/10/2026 – 23/10/2026), 
 | `scripts/validate.mjs` | Checks everything. Runs in CI on every push. |
 | `scripts/publish-prices.mjs` | Checks an extractor's JSON and publishes it. |
 | `scripts/make-qr.mjs` | Makes the QR code PNG. |
-| `assets/products/` | Product images. Seed images are placeholders. |
+| `assets/products/` | Product photos `<SKU>.webp` (600 px square), cut from the Betagro catalogue PDF and matched by Thai name; `photo_match` in the catalog says exact / close / similar. Placeholder SVGs are for new SKUs only — an active, priced product without a real photo fails `npm run validate`. |
 
 ## Setup
 
@@ -68,7 +68,7 @@ Add `?lang=en` to the URL for a QR that always opens in English. Otherwise the p
 - [x] Replace the placeholder products with the real sheet (2026-10-22: 33 pork, 26 chicken, 6 eggs).
 - [ ] Confirm SAP code 1000053261 with Betagro (listed twice on the sheet: ไก่NY (ไก่ล้วง) and ไก่ล้วง).
 - [ ] Add fish products to the catalog when they appear on a sheet (the fish tab stays hidden until then).
-- [ ] Add real product photos to `assets/products/` (square, ~256 px, under 30 KB each). Today every product uses its category's placeholder SVG.
+- [x] Add real product photos to `assets/products/` (2026-10-22: all 65 products, cut from Betagro_Trade_MKT_.pdf; review the `similar` ones).
 - [ ] Set the real LINE OA link in `config.json`.
 - [ ] Publish the first real week of prices.
 

@@ -7,5 +7,9 @@ Dated history of decisions for the QR price-menu site. Never "currently" — dat
 - [architecture.md](architecture.md) — extractor-swappable data contract (Claude → Benny)
 - [hosting.md](hosting.md) — GitHub Pages, repo SukhumvitShop
 
+- [design-feedback.md](design-feedback.md) — 2026-10-22 review: needs catalogue-quality style + photo for every priced item
+
+- [../design/DESIGN_BRIEF.md](../design/DESIGN_BRIEF.md) — 2026-10-22 v2 design brief (frontend-design + taste-skill + Refactoring UI + catalogue study)
+
 ## Open items
 - [open-items.md](open-items.md) — waiting on real SKU list + sample price PDF
