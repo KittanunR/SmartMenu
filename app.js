@@ -231,10 +231,21 @@
     return nav.toLowerCase().startsWith('th') ? 'th' : 'en';
   }
 
+  // GitHub Pages sometimes answers 503 for a moment (e.g. while a new push deploys). Without config.json
+  // the page would quietly lose the order endpoint and LINE link, so a failed load is tried again.
+  // A 404 is final: retrying will not make a missing file appear.
+  const LOAD_RETRY_MS = [800, 2000];
   async function getJson(path) {
-    const res = await fetch(path, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
-    return res.json();
+    for (let attempt = 0; ; attempt += 1) {
+      let res = null;
+      try { res = await fetch(path, { cache: 'no-cache' }); } catch (_) { /* offline or dropped: try again */ }
+      if (res && res.ok) return res.json();
+      const wait = LOAD_RETRY_MS[attempt];
+      if ((res && res.status === 404) || wait == null) {
+        throw new Error(`${path}: ${res ? `HTTP ${res.status}` : 'network error'}`);
+      }
+      await sleep(wait);
+    }
   }
 
   function parseDate(iso) {

@@ -8,7 +8,8 @@ Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ". 
 - index.html loads app.js/styles.css with `?v=YYYY-MM-DD` — bump on every code change (GitHub Pages caches 10 min).
 
 ## In progress (2026-10-23 day)
-- Sturdier ordering DONE locally (retry + same client_order_id, cart kept, LINE fallback, rate limits). See ordering.md 2026-10-23 (day). **Deploy order matters: Apps Script first (paste Code.gs → run setup() → new version of the same deployment), then push the site** — otherwise the new site's retries could hit the old server, which has no duplicate guard.
+- Sturdier ordering LIVE (retry + same client_order_id, cart kept, LINE fallback, rate limits). See ordering.md 2026-10-23 (day). Apps Script = Version 3 (same /exec URL, setup() ran → Order.Web_Client_ID exists); site pushed as commit 1b7a6ec, app.js?v=2026-10-23b. Checked: endpoint answers `too_big` (new code), live page loads new app.js. Not yet done: a real test order through the live site.
+- Found while checking: right after a Pages deploy, config.json returned 503 once (page would silently drop to pilot mode: no order_endpoint, no LINE link). FIXED locally 2026-10-23: getJson retries after 0.8 s and 2 s (not on 404); app.js?v=2026-10-23c. Tested with a simulated 503. Needs Petch to push.
 - This PC has no Node.js/Python: local preview uses `.claude/launch.json` "smartmenu-local" (PowerShell static server from the session scratchpad; recreate if gone). `npm run validate` can't run locally → CI on push checks it.
 
 ## Tomorrow's plan (Petch, 2026-10-23 01:29) — in Claude Code
