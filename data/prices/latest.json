@@ -1,9 +1,9 @@
 {
-  "effective_date": "2026-10-17",
-  "valid_from": "2026-10-17",
-  "valid_to": "2026-10-23",
-  "source_file": "aa71464c-image.jpg (chicken, eggs) + ce8086f9-image.jpg (pork)",
-  "extracted_by": "claude",
+  "effective_date": "2026-10-24",
+  "valid_from": "2026-10-24",
+  "valid_to": "2026-10-30",
+  "source_file": "carry-over of 2026-10-17 week (aa71464c-image.jpg (chicken, eggs) + ce8086f9-image.jpg (pork)); no new sheet, Petch approved 2026-10-23",
+  "extracted_by": "manual",
   "currency": "THB",
   "prices": [
     {
