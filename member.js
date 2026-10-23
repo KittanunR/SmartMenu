@@ -107,6 +107,13 @@
     },
   };
 
+  // Japanese, Chinese, Korean and Hindi from i18n.js, over English so a missing text shows in English.
+  const I18N = window.SM_I18N || null;
+  if (I18N) Object.keys(I18N.member).forEach((l) => {
+    const x = I18N.member[l];
+    TEXT[l] = { ...TEXT.en, ...x, err: { ...TEXT.en.err, ...x.err } };
+  });
+
   const state = { lang: pickLanguage(), config: {}, view: 'login', change: '', phone: '', remember: true, busy: false, error: {} };
   const $ = (id) => document.getElementById(id);
 
@@ -118,11 +125,10 @@
 
   function pickLanguage() {
     const q = new URLSearchParams(location.search).get('lang');
-    if (q === 'th' || q === 'en') return q;
     const saved = storageGet('menu-lang');
-    if (saved === 'th' || saved === 'en') return saved;
     const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    return nav.toLowerCase().startsWith('th') ? 'th' : 'en';
+    const lang = window.SM_I18N ? window.SM_I18N.pick(q, saved, nav) : [q, saved].find((l) => l === 'th' || l === 'en');
+    return lang || (nav.toLowerCase().startsWith('th') ? 'th' : 'en');
   }
 
   function loadMember() {
@@ -184,7 +190,8 @@
     const t = TEXT[state.lang];
     document.documentElement.lang = state.lang;
     document.title = `${t.loginTitle} · Betagro Shop`;
-    document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
+    $('lang-select').value = state.lang;
+    $('lang-now').textContent = (I18N && I18N.short[state.lang]) || (state.lang === 'th' ? 'ไทย' : 'EN');
     document.querySelectorAll('[data-t]').forEach((n) => { if (typeof t[n.dataset.t] === 'string') n.textContent = t[n.dataset.t]; });
     document.querySelectorAll('.pw__toggle').forEach((b) => { b.textContent = $(b.dataset.for).type === 'password' ? t.show : t.hide; });
     const branch = String(state.config.shop_name_en || '').replace(/^\s*Betagro Shop\s*/i, '');
@@ -290,11 +297,13 @@
 
   // ---------- boot ----------
   async function boot() {
-    document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => {
-      state.lang = b.dataset.lang;
+    // Language picker: a native select under a pill; languages without texts (i18n.js did not load) are taken out.
+    [...$('lang-select').options].forEach((o) => { if (!TEXT[o.value]) o.remove(); });
+    $('lang-select').addEventListener('change', () => {
+      state.lang = $('lang-select').value;
       storageSet('menu-lang', state.lang);
       render();
-    }));
+    });
     document.querySelectorAll('.pw__toggle').forEach((b) => b.addEventListener('click', () => {
       const input = $(b.dataset.for);
       input.type = input.type === 'password' ? 'text' : 'password';

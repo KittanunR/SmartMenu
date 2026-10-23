@@ -244,7 +244,12 @@
       },
     },
   };
-  // Opener titles are bilingual like the catalogue: thin English caps over green Thai.
+  // Japanese, Chinese, Korean and Hindi come from i18n.js, laid over English so a missing text shows in English.
+  // Without i18n.js (failed load) the page simply offers Thai and English.
+  const I18N = window.SM_I18N || null;
+  if (I18N) Object.keys(I18N.menu).forEach((l) => { TEXT[l] = { ...TEXT.en, ...I18N.menu[l] }; });
+  // Opener titles are bilingual like the catalogue: thin English caps over the name in the chosen language
+  // (Thai when the menu is in English).
   const OPENER_EN = { pork: 'Pork', chicken: 'Chicken', egg: 'Eggs', fish: 'Fish' };
 
   const state = {
@@ -276,11 +281,10 @@
 
   function pickLanguage() {
     const q = new URLSearchParams(location.search).get('lang');
-    if (q === 'th' || q === 'en') return q;
     const saved = storageGet('menu-lang');
-    if (saved === 'th' || saved === 'en') return saved;
     const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    return nav.toLowerCase().startsWith('th') ? 'th' : 'en';
+    const lang = window.SM_I18N ? window.SM_I18N.pick(q, saved, nav) : [q, saved].find((l) => l === 'th' || l === 'en');
+    return lang || (nav.toLowerCase().startsWith('th') ? 'th' : 'en');
   }
 
   // GitHub Pages sometimes answers 503 for a moment (e.g. while a new push deploys). Without config.json
@@ -307,10 +311,11 @@
 
   // th-TH formats in the Buddhist calendar (พ.ศ.), en-GB in Gregorian.
   function dateFormat(t, month) {
-    return new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: month || 'short', year: 'numeric' });
+    return new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: month || t.dateMonth || 'short', year: 'numeric' });
   }
 
   function formatRange(from, to, t) {
+    if (t.dateRange) return t.dateRange(from, to);   // ja / zh (i18n.js)
     const f = dateFormat(t);
     if (!to || to.getTime() === from.getTime()) return f.format(from);
     if (typeof f.formatRange === 'function') return f.formatRange(from, to);
@@ -355,20 +360,32 @@
 
   function matches(p, q) {
     if (!q) return true;
-    return [p.name_th, p.name_en, p.description_th, p.description_en, p.sap_code, p.sku]
+    return [p.name_th, p.name_en, p[`name_${state.lang}`], p.description_th, p.description_en, p.sap_code, p.sku]
       .some((s) => typeof s === 'string' && s.toLowerCase().includes(q));
   }
 
-  const other = () => (state.lang === 'th' ? 'en' : 'th');
+  // The second name under each product: English, or Thai when the menu is in English.
+  const other = () => (state.lang === 'en' ? 'th' : 'en');
+  const nameOf = (p) => p[`name_${state.lang}`] || p.name_en;   // a product not translated yet shows English
+
+  // Language picker: a native select under a pill (the phone's own list on iPhone). Languages without texts
+  // (i18n.js did not load) are taken out.
+  function initLangPicker(onPick) {
+    const sel = document.getElementById('lang-select');
+    [...sel.options].forEach((o) => { if (!TEXT[o.value]) o.remove(); });
+    sel.addEventListener('change', () => onPick(sel.value));
+  }
+  function renderLangPicker() {
+    document.getElementById('lang-select').value = state.lang;
+    document.getElementById('lang-now').textContent = (I18N && I18N.short[state.lang]) || (state.lang === 'th' ? 'ไทย' : 'EN');
+  }
 
   // ---------- render ----------
   function render() {
     const t = TEXT[state.lang];
     document.documentElement.lang = state.lang;
 
-    document.querySelectorAll('.lang button').forEach((b) => {
-      b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang));
-    });
+    renderLangPicker();
 
     const shop = state.lang === 'th' ? state.config.shop_name_th : state.config.shop_name_en;
     // Lockup: the brand in wide-tracked caps, the branch under it (Thai is never letter-spaced).
@@ -460,7 +477,9 @@
   function renderOpener(t) {
     const c = state.category;
     document.getElementById('opener-en').textContent = OPENER_EN[c];
-    document.getElementById('opener-th').textContent = t.opener[c];
+    const local = document.getElementById('opener-th');
+    local.textContent = t.opener[c];
+    local.lang = state.lang === 'en' ? 'th' : state.lang;
     const badge = document.getElementById('badge');
     badge.replaceChildren(svgUse(`i-${c}`));
   }
@@ -531,7 +550,7 @@
     b.appendChild(plate);
 
     const names = el('span', 'tile__names');
-    names.appendChild(el('span', 'tile__name', p[`name_${state.lang}`]));
+    names.appendChild(el('span', 'tile__name', nameOf(p)));
     const alt = el('span', 'tile__alt', p[`name_${other()}`]);
     alt.lang = other();
     names.appendChild(alt);
@@ -588,7 +607,7 @@
     img.src = p.image;
     img.alt = `${p.name_th} ${p.name_en}`;
     document.getElementById('sheet-code').textContent = p.sku;
-    document.getElementById('sheet-name').textContent = p[`name_${state.lang}`];
+    document.getElementById('sheet-name').textContent = nameOf(p);
     const alt = document.getElementById('sheet-alt');
     alt.textContent = p[`name_${other()}`];
     alt.lang = other();
@@ -805,7 +824,7 @@
   // data-osku and a _sync() so a change anywhere updates every view of that product.
   function buyBox(p, row, t, variant) {
     const unit = unitOf(p, row);
-    const name = p[`name_${state.lang}`];
+    const name = nameOf(p);
     const box = el('div', `buy buy--${variant}`);
     box.dataset.osku = p.sku;
 
@@ -990,7 +1009,7 @@
       img.loading = 'lazy';
       li.appendChild(img);
       const head = el('div', 'line__head');
-      head.appendChild(el('p', 'line__name', l.p[`name_${state.lang}`]));
+      head.appendChild(el('p', 'line__name', nameOf(l.p)));
       const alt = el('p', 'line__alt', l.p[`name_${other()}`]);
       alt.lang = other();
       head.appendChild(alt);
@@ -998,7 +1017,7 @@
       const rm = el('button', 'line__rm');
       rm.type = 'button';
       rm.appendChild(icon('M6 6l12 12M18 6L6 18'));
-      rm.setAttribute('aria-label', t.removeOf(l.p[`name_${state.lang}`]));
+      rm.setAttribute('aria-label', t.removeOf(nameOf(l.p)));
       rm.addEventListener('click', () => setQty(l.p.sku, 0));
       li.appendChild(rm);
       const box = buyBox(l.p, l.row, t, 'line');
@@ -1439,6 +1458,7 @@
 
   // Plain-text order summary for the shop's LINE chat. Item names stay Thai (the shop picks by them).
   function lineText(o, id, t) {
+    t = state.lang === 'en' ? TEXT.en : TEXT.th;   // the shop's staff read it: Thai, or English if the buyer chose English
     const m = t.msg;
     const c = o.customer;
     const head = [m.head(id), `${m.shop}: ${c.shop_name}`];
@@ -1500,6 +1520,7 @@
   }
 
   function setLanguage(lang) {
+    if (!TEXT[lang]) return;
     state.lang = lang;
     storageSet('menu-lang', lang);
     render();
@@ -1510,9 +1531,7 @@
     const fromScan = takeShopCodeFromUrl();
     loadShop();
     loadMember();
-    document.querySelectorAll('.lang button').forEach((b) => {
-      b.addEventListener('click', () => setLanguage(b.dataset.lang));
-    });
+    initLangPicker(setLanguage);
     document.getElementById('tabs').addEventListener('keydown', onTabKey);
     document.getElementById('search').addEventListener('input', (e) => {
       state.query = e.target.value;

@@ -98,6 +98,13 @@
   // Pill look per DIFOT status (styles.css .pill--*); anything else gets the plain look.
   const STATUS_LOOK = { New: 'wait', Received: 'wait', Packed: 'wait', Out: 'out', Delivered: 'done', Issue: 'issue' };
 
+  // Japanese, Chinese, Korean and Hindi from i18n.js, over English so a missing text shows in English.
+  const I18N = window.SM_I18N || null;
+  if (I18N) Object.keys(I18N.history).forEach((l) => {
+    const x = I18N.history[l];
+    TEXT[l] = { ...TEXT.en, ...x, status: { ...TEXT.en.status, ...x.status }, catName: { ...TEXT.en.catName, ...x.catName } };
+  });
+
   const state = { lang: pickLanguage(), config: {}, member: loadMember(), catalog: new Map(), result: null, error: '', loading: true, week: null };
   const $ = (id) => document.getElementById(id);
 
@@ -108,11 +115,10 @@
 
   function pickLanguage() {
     const q = new URLSearchParams(location.search).get('lang');
-    if (q === 'th' || q === 'en') return q;
     const saved = storageGet('menu-lang');
-    if (saved === 'th' || saved === 'en') return saved;
     const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    return nav.toLowerCase().startsWith('th') ? 'th' : 'en';
+    const lang = window.SM_I18N ? window.SM_I18N.pick(q, saved, nav) : [q, saved].find((l) => l === 'th' || l === 'en');
+    return lang || (nav.toLowerCase().startsWith('th') ? 'th' : 'en');
   }
 
   function loadMember() {
@@ -185,10 +191,13 @@
   const bkkDay = (ms) => Date.parse(`${new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(ms))}T00:00:00Z`);
   const weekOf = (day) => day - ((new Date(day).getUTCDay() + 6) % 7) * DAY;
   function weekRange(start, t) {
-    const f = (ms, month) => new Intl.DateTimeFormat(t.locale, { timeZone: 'UTC', day: 'numeric', month }).format(new Date(ms));
     const end = start + 6 * DAY;
-    const sameMonth = new Date(start).getUTCMonth() === new Date(end).getUTCMonth();
-    return sameMonth ? `${f(start)}–${f(end, 'short')}` : `${f(start, 'short')} – ${f(end, 'short')}`;
+    // ja / zh write their own (Intl gives 10/19～10/25); they take local dates, so rebuild them from the UTC day.
+    const local = (ms) => { const d = new Date(ms); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
+    if (t.dayRange) return t.dayRange(local(start), local(end));
+    const f = new Intl.DateTimeFormat(t.locale, { timeZone: 'UTC', day: 'numeric', month: t.dateMonth || 'short' });
+    if (typeof f.formatRange === 'function') return f.formatRange(new Date(start), new Date(end));
+    return `${f.format(new Date(start))} – ${f.format(new Date(end))}`;
   }
 
   function summarise(orders, days) {
@@ -277,7 +286,7 @@
       const c = state.catalog.get(p.sku);
       if (c && /^assets\/products\/[A-Z]{2}-\d{3}\.webp$/.test(c.image || '')) img.src = c.image;
       const text = el('div', 'hist__name');
-      text.append(el('span', null, (state.lang === 'en' && c && c.name_en) || p.name_th || p.sku),
+      text.append(...productName(c, p.name_th || p.sku),
         el('span', 'hist__each', t.topQty(money(p.qty, t), t.unit(p.unit, p.qty))));
       li.append(img, text, el('span', 'hist__amount', `฿${money(Math.round(p.total), t)}`));
       return li;
@@ -285,12 +294,24 @@
     $('stats-note').textContent = t.note + (s.capped ? t.capped(orders.length) : '');
   }
 
+  // Product name in the chosen language from the catalog (the order line only keeps Thai). In Japanese, Chinese,
+  // Korean and Hindi the English name goes under it, as on the menu.
+  function productName(p, thai) {
+    if (state.lang === 'th' || !p) return [el('span', null, thai)];
+    const main = el('span', null, p['name_' + state.lang] || p.name_en || thai);
+    if (state.lang === 'en' || !p['name_' + state.lang] || !p.name_en) return [main];
+    const alt = el('span', 'hist__alt', p.name_en);
+    alt.lang = 'en';
+    return [main, alt];
+  }
+
   // ---------- render ----------
   function render() {
     const t = TEXT[state.lang];
     document.documentElement.lang = state.lang;
     document.title = `${t.title} · Betagro Shop`;
-    document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
+    $('lang-select').value = state.lang;
+    $('lang-now').textContent = (I18N && I18N.short[state.lang]) || (state.lang === 'th' ? 'ไทย' : 'EN');
     document.querySelectorAll('[data-t]').forEach((n) => { if (typeof t[n.dataset.t] === 'string') n.textContent = t[n.dataset.t]; });
     const name = (k) => String(state.config[k] || '').replace(/^\s*Betagro Shop\s*/i, '');
     $('shop-branch').textContent = name(state.lang === 'th' ? 'shop_name_th' : 'shop_name_en');
@@ -338,7 +359,7 @@
       img.loading = 'lazy';
       if (p && /^assets\/products\/[A-Z]{2}-\d{3}\.webp$/.test(p.image || '')) img.src = p.image;   // else an empty tile keeps the columns
       const text = el('div', 'hist__name');
-      text.append(el('span', null, (state.lang === 'en' && p && p.name_en) || it.name_th || it.sku),
+      text.append(...productName(p, it.name_th || it.sku),
         el('span', 'hist__each', t.each(money(it.qty, t), t.unit(it.qty_unit, it.qty), money(it.unit_price, t))));
       row.append(img, text, el('span', 'hist__amount', `฿${money(it.line_total, t)}`));
       lines.append(row);
@@ -379,11 +400,13 @@
   }
 
   async function boot() {
-    document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => {
-      state.lang = b.dataset.lang;
+    // Language picker: a native select under a pill; languages without texts (i18n.js did not load) are taken out.
+    [...$('lang-select').options].forEach((o) => { if (!TEXT[o.value]) o.remove(); });
+    $('lang-select').addEventListener('change', () => {
+      state.lang = $('lang-select').value;
       storageSet('menu-lang', state.lang);
       render();
-    }));
+    });
     $('h-retry').addEventListener('click', load);
     state.loading = Boolean(state.member);
     render();

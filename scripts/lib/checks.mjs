@@ -73,6 +73,9 @@ export function checkCatalog(catalog) {
     }
     // Missing image on an active, priced product is an ERROR in checkPhotos(); here it is only a warning.
     if (!existsSync(join(ROOT, p.image))) warnings.push(`catalog: ${p.sku} image not found: ${p.image}`);
+    // Without one the menu falls back to the English name in that language.
+    const untranslated = ['ja', 'zh', 'ko', 'hi'].filter((l) => !p[`name_${l}`]);
+    if (p.active && untranslated.length) warnings.push(`catalog: ${p.sku} (${p.name_en}) has no name in ${untranslated.join(', ')} — the menu shows English there`);
     if (p.sap_code) {
       if (p.sap_code.length !== SAP_CODE_LENGTH) {
         warnings.push(`catalog: ${p.sku} SAP code ${p.sap_code} has ${p.sap_code.length} digits (expected ${SAP_CODE_LENGTH}) — check the sheet`);
@@ -278,7 +281,7 @@ export function checkRepo() {
 }
 
 const PAGES = ['index.html', 'member.html', 'history.html', 'tools/shop-qr.html'];
-const SCRIPTS = ['app.js', 'member.js', 'history.js', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Member.gs', 'backend/apps-script/Bcrypt.gs'];
+const SCRIPTS = ['app.js', 'member.js', 'history.js', 'i18n.js', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Member.gs', 'backend/apps-script/Bcrypt.gs'];
 const CONFIG_STRINGS = ['shop_name_th', 'shop_name_en', 'line_oa_url', 'line_oa_id', 'shop_id'];
 const ENDPOINT = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 
