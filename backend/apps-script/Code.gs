@@ -26,6 +26,8 @@ const ITEM_COLS = ['Item_ID', 'Order_ID', 'SKU', 'Name_TH', 'Qty', 'Qty_Unit', '
 // Shop accounts. Password_Hash is bcrypt only; no password, temporary or chosen, is ever written anywhere.
 const AUTH_COLS = ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At'];
 const SESSION_COLS = ['Token_Hash', 'Customer_ID', 'Created_At', 'Expires_At', 'Last_Seen', 'Revoked_At'];
+// Who changed which shop in the admin page (Admin.gs). Never holds a password.
+const ADMIN_LOG_COLS = ['Timestamp', 'User', 'Action', 'Customer_ID', 'Note'];
 // Same rule as the catalog check (scripts/lib/checks.mjs SKU_PREFIX): a SKU's prefix names its category.
 const SKU_CATEGORY = { PK: 'pork', CK: 'chicken', EG: 'egg', FS: 'fish' };
 
@@ -37,6 +39,7 @@ function setup() {
   ensureTab_(ss, 'Order_Items', ITEM_COLS);
   ensureTab_(ss, 'Member_Auth', AUTH_COLS);
   ensureTab_(ss, 'Sessions', SESSION_COLS);
+  ensureTab_(ss, 'Admin_Log', ADMIN_LOG_COLS);
   return 'ok';
 }
 
@@ -150,7 +153,9 @@ function maskAddress_(a) {
   return s.slice(0, Math.min(12, Math.ceil(s.length / 3))).trim() + '…';
 }
 
+/** The admin page for a signed-in admin (Admin.gs), otherwise the public health check the order deployment answers. */
 function doGet() {
+  if (adminEmail_()) return adminPage_();
   return json_({ ok: true, service: 'smartmenu-order', contract: 'order.v1' });
 }
 
@@ -283,20 +288,28 @@ function findOrCreateCustomer_(ss, c, address) {
   const data = sh.getDataRange().getValues();
   const h = data[0];
   const iCode = h.indexOf('Code'), iType = h.indexOf('Type'), iPhone = h.indexOf('Phone');
-  let maxW = 0;
   for (let r = 1; r < data.length; r++) {
     if (data[r][iType] !== 'Customer') continue;
     if (String(data[r][iPhone]).replace(/\D/g, '') === c.phone) return data[r][iCode];
-    const m = String(data[r][iCode]).match(/^CUS-W(\d+)$/);
-    if (m) maxW = Math.max(maxW, Number(m[1]));
   }
-  const code = 'CUS-W' + String(maxW + 1).padStart(3, '0');
+  const code = nextCustomerCode_(data);
   appendByHeader_(sh, {
     Code: code, Type: 'Customer', Name: c.shop_name, Category: 'Web',
     Active: 'Yes', Shop_ID: SHOP_ID, Phone: "'" + c.phone, Source: 'Web',
     Address: address || '', Contact_Name: c.contact_name || '', LINE_Name: c.line_name || ''
   });
   return code;
+}
+
+/** CUS-W + (highest web customer number + 1), from Master's values (header row first). */
+function nextCustomerCode_(data) {
+  const iCode = data[0].indexOf('Code');
+  let maxW = 0;
+  for (let r = 1; r < data.length; r++) {
+    const m = String(data[r][iCode]).match(/^CUS-W(\d+)$/);
+    if (m) maxW = Math.max(maxW, Number(m[1]));
+  }
+  return 'CUS-W' + String(maxW + 1).padStart(3, '0');
 }
 
 function nextOrderId_(sheet, now) {
@@ -310,16 +323,20 @@ function nextOrderId_(sheet, now) {
   return prefix + String(n).padStart(3, '0');
 }
 
+// Sheets turns text starting with = + - @ into a formula (=IMPORTDATA("https://…"&A2) typed into the order form could
+// send sheet data out). Every row we write goes through this, so typed text stays text; the apostrophe is not stored.
+const plain_ = v => (typeof v === 'string' && /^[=+\-@]/.test(v) ? "'" + v : v);
+
 function appendByHeader_(sheet, obj) {
   const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  sheet.appendRow(head.map(k => (k in obj ? obj[k] : '')));
+  sheet.appendRow(head.map(k => (k in obj ? plain_(obj[k]) : '')));
 }
 
 /** Many rows in one write (faster than appendRow per item, so the lock is held for less time). */
 function appendRowsByHeader_(sheet, objs) {
   if (!objs.length) return;
   const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const rows = objs.map(obj => head.map(k => (k in obj ? obj[k] : '')));
+  const rows = objs.map(obj => head.map(k => (k in obj ? plain_(obj[k]) : '')));
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, head.length).setValues(rows);
 }
 

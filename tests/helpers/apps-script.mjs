@@ -37,8 +37,13 @@ class FakeRange {
   setValue(v) { return this.setValues([[v]]); }
 }
 
-// Sheets stores "'0812345678" as the text 0812345678 (the apostrophe only stops it becoming a number).
-const stored = v => (typeof v === 'string' && v.startsWith("'") ? v.slice(1) : v);
+// Sheets stores "'0812345678" as the text 0812345678 (the apostrophe only stops it becoming a number or a formula).
+// Any other text starting with = becomes a formula; it is kept as FORMULA(...) so a test can see it happened.
+const stored = v => {
+  if (typeof v !== 'string') return v;
+  if (v.startsWith("'")) return v.slice(1);
+  return v.startsWith('=') ? `FORMULA(${v})` : v;
+};
 
 export class FakeSheet {
   constructor(name, rows = []) { this.name = name; this.cells = rows.map(r => r.map(stored)); }
@@ -86,23 +91,72 @@ function formatDate(date, tz, fmt) {
   return fmt.replace(/yyyy|yy|MM|dd|HH|mm|ss/g, t => ({ yyyy: p.year, yy: p.year.slice(2), MM: p.month, dd: p.day, HH: p.hour, mm: p.minute, ss: p.second }[t]));
 }
 
+class FakeBlob {
+  constructor(data, type, name) { Object.assign(this, { data: Buffer.from(data.map(b => b & 0xff)), type, name }); }
+  getBytes() { return signed(this.data); }
+  getContentType() { return this.type; }
+  getName() { return this.name; }
+}
+
+/** Drive: folders and files in memory. `files` is exposed so tests can look at what was saved or trashed. */
+function fakeDrive() {
+  const files = new Map();
+  const folders = new Map();
+  let n = 0;
+  const file = (blob, folderId) => {
+    const id = `file${++n}`;
+    const f = { id, blob, folderId, trashed: false, getId: () => id, getBlob: () => blob, setTrashed(v) { f.trashed = v; return f; } };
+    files.set(id, f);
+    return f;
+  };
+  const folder = (name) => {
+    const id = `folder${++n}`;
+    const f = { id, name, getId: () => id, createFile: blob => file(blob, id) };
+    folders.set(id, f);
+    return f;
+  };
+  const get = (map, id) => { if (!map.has(id)) throw new Error(`No item with the given ID could be found: ${id}`); return map.get(id); };
+  return { files, folders, api: { createFolder: folder, getFolderById: id => get(folders, id), getFileById: id => get(files, id) } };
+}
+
 /**
- * A fresh Apps Script world with Code.gs + Bcrypt.gs loaded. Returns the context (call its functions directly),
- * the fake spreadsheet, and post(body) which goes through doPost exactly like the site's fetch does.
+ * A fresh Apps Script world with Code.gs + Admin.gs + Bcrypt.gs loaded. Returns the context (call its functions
+ * directly), the fake spreadsheet, and post(body) which goes through doPost exactly like the site's fetch does.
+ * `user` is who opened the web app ('' = not signed in, as on the public order deployment); `owner` runs the script.
  */
-export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs'] } = {}) {
+export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
   const ss = new FakeSpreadsheet();
   const cache = new Map();
+  const properties = new Map(Object.entries(props));
+  const drive = fakeDrive();
+  const session = { user, owner };
   const ctx = createContext({
     console: { log() {}, error: console.error },
     SpreadsheetApp: { openById: () => ss, flush() {} },
     CacheService: { getScriptCache: () => ({ get: k => (cache.has(k) ? cache.get(k) : null), put: (k, v) => { cache.set(k, String(v)); } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType() { return this; }, getContent: () => s }) },
+    Session: {
+      getActiveUser: () => ({ getEmail: () => session.user }),
+      getEffectiveUser: () => ({ getEmail: () => session.owner }),
+    },
+    PropertiesService: {
+      getScriptProperties: () => ({ getProperty: k => (properties.has(k) ? properties.get(k) : null), setProperty(k, v) { properties.set(k, String(v)); return this; } }),
+    },
+    HtmlService: {
+      createHtmlOutputFromFile: file => {
+        const out = { file, title: '', meta: {}, setTitle(t) { out.title = t; return out; }, addMetaTag(k, v) { out.meta[k] = v; return out; } };
+        return out;
+      },
+    },
+    DriveApp: drive.api,
     Utilities: {
       DigestAlgorithm: { SHA_256: 'sha256' },
       getUuid: () => randomUUID(),
       computeDigest: (alg, v) => signed(createHash(alg).update(bytes(v)).digest()),
+      base64Decode: s => signed(Buffer.from(s, 'base64')),
+      base64Encode: b => Buffer.from(b.map(x => x & 0xff)).toString('base64'),
+      newBlob: (data, type, name) => new FakeBlob(data, type, name),
       formatDate,
     },
   });
@@ -110,7 +164,7 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs'] } = {}) {
     new Script(readFileSync(join(ROOT, 'backend', 'apps-script', f), 'utf8'), { filename: f }).runInContext(ctx);
   }
   const post = body => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent());
-  return { ctx, ss, cache, post, sheet: n => ss.getSheetByName(n) };
+  return { ctx, ss, cache, post, sheet: n => ss.getSheetByName(n), drive, properties, session };
 }
 
 /** A valid guest order (order.v1) with hand-checked totals: 3 kg × ฿80 + 2 kg × ฿65 = ฿370. */
