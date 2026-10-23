@@ -98,6 +98,19 @@ img { display: block; max-width: 100%; }
 }
 .cover__cadence { margin-top: var(--s2); font-size: var(--t14); color: var(--mint); }
 .cover__shop { margin-top: var(--s3); font: 500 var(--t16)/1.4 var(--text); color: var(--white); }
+.reorder-btn {
+  margin-top: var(--s3);
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--white);
+  font: 500 var(--t14)/1.2 var(--text);
+  cursor: pointer;
+}
+.reorder-btn:hover { background: rgba(255, 255, 255, .12); }
+.reorder-btn:focus-visible { outline-color: var(--white); }
 
 /* ---------- category tabs (sticky) ---------- */
 .tabs {
@@ -509,6 +522,6 @@ button.order-btn, .send-line { width: 100%; border: 0; cursor: pointer; }
 @media (min-width: 640px) {
   :root { --gutter: var(--s6); }
   .grid { grid-template-columns: repeat(3, 1fr); column-gap: var(--s5); }
-  .cover__inner, .cover__top, .cover__title, .cover__cadence { max-width: 696px; margin-left: auto; margin-right: auto; }
+  .cover__inner, .cover__top, .cover__title, .cover__cadence, .cover__shop, .cover__actions { max-width: 696px; margin-left: auto; margin-right: auto; }
   .sheet { border-radius: var(--r-hair); bottom: var(--s5); }
 }

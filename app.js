@@ -104,6 +104,8 @@
       orderingOff: 'การสั่งออนไลน์จะเปิดอีกครั้งเมื่อราคาสัปดาห์ใหม่ขึ้นระบบ ระหว่างนี้สั่งทาง LINE ได้เลย',
       // shop QR
       shopHello: (name) => `สั่งในนามร้าน ${name}`,
+      reorder: (n) => `สั่งเหมือนครั้งก่อน · ${n} รายการ`,
+      reorderDone: (n, gone) => `ใส่ตะกร้าแล้ว ${n} รายการ เช็กจำนวนก่อนสั่ง${gone ? ` (${gone} รายการไม่มีขายสัปดาห์นี้)` : ''}`,
       notMe: 'ไม่ใช่ร้านนี้?',
       shopPhone: (p) => `โทร ${p}`,
       shopAddress: (a) => `ส่งที่ ${a}`,
@@ -201,6 +203,8 @@
       orderingOff: "Online ordering reopens when the new week's prices are posted. You can order on LINE meanwhile.",
       // shop QR
       shopHello: (name) => `Ordering as ${name}`,
+      reorder: (n) => `Order same as last time · ${n === 1 ? '1 item' : `${n} items`}`,
+      reorderDone: (n, gone) => `Added ${n === 1 ? '1 item' : `${n} items`} — check quantities before ordering.${gone ? ` (${gone} not sold this week)` : ''}`,
       notMe: 'Not your shop?',
       shopPhone: (p) => `Phone ${p}`,
       shopAddress: (a) => `Deliver to ${a}`,
@@ -696,15 +700,47 @@
     for (const it of items) {
       if (!Array.isArray(it) || state.cart.size >= MAX_LINES) continue;
       const [sku, qty] = it;
-      const p = state.productBySku.get(sku);
       // Drop anything this week's menu no longer sells; prices are always re-read from latest.json.
-      if (!p || !p.active || !state.priceBySku.has(sku)) continue;
+      if (!sellable(sku)) continue;
       if (!Number.isInteger(qty) || qty <= 0) continue;
       state.cart.set(sku, Math.min(qty, MAX_QTY));
     }
   }
   function saveCart() {
     storageSet('menu-cart', JSON.stringify({ v: 1, items: [...state.cart] }));
+  }
+  function sellable(sku) {
+    const p = state.productBySku.get(sku);
+    return Boolean(p && p.active && state.priceBySku.has(sku));
+  }
+
+  // ---------- ordering: "same as last time" (this device only) ----------
+  // An order that went somewhere (Apps Script or LINE) is kept as [sku, qty] pairs. One tap puts them
+  // back in the cart at this week's prices; products no longer sold are skipped.
+  function saveLastOrder(order) {
+    storageSet('menu-last-order', JSON.stringify({ v: 1, items: order.items.map((i) => [i.sku, i.qty]) }));
+  }
+  function lastOrderItems() {
+    let saved = null;
+    try { saved = JSON.parse(storageGet('menu-last-order') || 'null'); } catch (_) { saved = null; }
+    const items = saved && Array.isArray(saved.items) ? saved.items : [];
+    return items.filter((it) => Array.isArray(it) && Number.isInteger(it[1]) && it[1] > 0).slice(0, MAX_LINES);
+  }
+  function renderReorder() {
+    const btn = document.getElementById('reorder');
+    const n = lastOrderItems().filter(([sku]) => sellable(sku)).length;
+    btn.hidden = !(orderingOpen() && state.cart.size === 0 && n > 0);
+    if (!btn.hidden) btn.textContent = TEXT[state.lang].reorder(n);
+  }
+  function reorder() {
+    const items = lastOrderItems();
+    const ok = items.filter(([sku]) => sellable(sku));
+    ok.forEach(([sku, qty]) => state.cart.set(sku, Math.min(qty, MAX_QTY)));
+    saveCart();
+    ok.forEach(([sku]) => syncSku(sku));
+    renderDock();
+    flash(TEXT[state.lang].reorderDone(ok.length, items.length - ok.length));
+    document.getElementById('cart-cta').focus();
   }
 
   // ---------- ordering: stepper ----------
@@ -845,6 +881,7 @@
       document.getElementById('cart-view').textContent = t.viewCart;
       document.getElementById('cart-total').textContent = `฿${formatPrice(cartTotal(), t)}`;
     }
+    renderReorder();
   }
 
   // ---------- ordering: cart dialog ----------
@@ -1214,6 +1251,7 @@
     if (result.ok && result.id) {
       state.last.status = 'ok';
       state.last.id = result.id;
+      saveLastOrder(state.last.order);
       clearCart();
       storageSet('menu-pending', '');
     } else {
@@ -1375,14 +1413,16 @@
     // Failed send: keep the cart (LINE may not have opened) and offer to clear it once the buyer is back.
     document.getElementById('done-line').addEventListener('click', () => {
       if (!state.last) return;
-      if (state.last.status === 'pilot') clearCart();
+      if (state.last.status === 'pilot') { saveLastOrder(state.last.order); clearCart(); }
       if (state.last.status === 'fail') { state.last.lineSent = true; renderDone(); }
     });
     document.getElementById('done-clear').addEventListener('click', () => {
+      if (state.last) saveLastOrder(state.last.order);   // the buyer says the LINE message went
       clearCart();
       storageSet('menu-pending', '');
       closeCart();
     });
+    document.getElementById('reorder').addEventListener('click', reorder);
     document.getElementById('shop-forget').addEventListener('click', () => {
       forgetShop();
       document.getElementById('f-shop').focus();
