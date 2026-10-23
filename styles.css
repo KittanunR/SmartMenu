@@ -29,13 +29,14 @@
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
 
   /* type */
-  --t12: 12px; --t14: 14px; --t16: 16px; --t20: 20px; --t28: 28px; --t40: 40px;
+  --t12: 12px; --t14: 14px; --t16: 16px; --t20: 20px; --t24: 24px; --t28: 28px; --t40: 40px;
   --display: "Prompt", "Plex Thai", "Leelawadee UI", Tahoma, sans-serif;
   --text: "Plex Thai", "Prompt", "Leelawadee UI", Tahoma, system-ui, sans-serif;
 
   /* shape */
   --r-hair: 2px;
   --r-pill: 999px;
+  --r-card: 12px;       /* the shop card on the cover only */
   --pack-shadow: 0 12px 16px -12px rgba(27, 31, 26, .32);   /* light from the top; photos only */
 
   --gutter: var(--s4);
@@ -527,9 +528,34 @@ button.order-btn, .send-line { width: 100%; border: 0; cursor: pointer; }
 }
 
 /* ---------- shop login (Phase 3): cover account row + member.html ---------- */
-.cover__member { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); }
-.cover__logo { width: 48px; height: 48px; flex: none; object-fit: contain; border-radius: var(--r-hair); background: var(--white); }
-.cover__member .cover__shop { margin: 0; }   /* beats the wide-screen auto margins on .cover__shop */
+/* Shop card: a framed logo (or the name's first letter) beside the shop name, like a member card. */
+.cover__member {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: var(--s4);
+  margin-top: var(--s5); padding: var(--s4);
+  border: 1px solid rgba(255, 255, 255, .16); border-radius: var(--r-card);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .02) 60%);
+}
+.cover__member::before { content: ""; position: absolute; top: 0; left: var(--s4); width: 40px; height: 2px; background: var(--leaf); }
+.cover__mark {
+  flex: none; display: grid; place-items: center;
+  width: 80px; height: 80px; padding: var(--s1);
+  border-radius: var(--r-card); background: var(--white);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .35), 0 14px 24px -12px rgba(0, 0, 0, .55);
+}
+.cover__logo { width: 100%; height: 100%; object-fit: contain; border-radius: var(--s2); }
+.cover__initial { font: 600 var(--t40)/1 var(--display); color: var(--forest); }
+.cover__who { min-width: 0; display: grid; justify-items: start; gap: 2px; }
+.cover__as { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font: 400 var(--t12)/1.4 var(--text); color: var(--mint); }
+html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transform: uppercase; }
+.cover__badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 1px 10px 1px 8px; border: 1px solid rgba(120, 176, 64, .6); border-radius: var(--r-pill);
+  background: rgba(120, 176, 64, .18); color: var(--white); font: 500 var(--t12)/1.4 var(--text);
+}
+.cover__badge::before { content: ""; width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--leaf); }
+.cover__member .cover__shop { margin: 0; font: 600 var(--t24)/1.2 var(--display); overflow-wrap: anywhere; }   /* margin beats the wide-screen auto margins on .cover__shop */
+.cover__who .cover-link { min-height: 36px; }
 .cover-link {
   min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
   display: inline-flex; align-items: center;
@@ -555,4 +581,9 @@ button.order-btn, .send-line { width: 100%; border: 0; cursor: pointer; }
 .sprite { position: absolute; }
 @media (min-width: 640px) {
   .cover__member, .cover__account { max-width: 696px; margin-left: auto; margin-right: auto; }
+  .cover__member { gap: var(--s5); padding: var(--s5); }
+  .cover__member::before { left: var(--s5); }
+  .cover__mark { width: 112px; height: 112px; padding: 6px; }
+  .cover__initial { font-size: 56px; }
+  .cover__member .cover__shop { font-size: var(--t28); }
 }

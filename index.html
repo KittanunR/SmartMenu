@@ -10,8 +10,8 @@
   <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/prompt-latin-300.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2026-10-24a">
-  <script src="app.js?v=2026-10-24a" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2026-10-24b">
+  <script src="app.js?v=2026-10-24b" defer></script>
 </head>
 <body>
   <header class="cover">
@@ -29,12 +29,18 @@
     <p class="cover__cadence" id="cadence"></p>
     <!-- Logged-in shop (member.html) or the shop's own QR: who is ordering, with the logo for a login. -->
     <div class="cover__member" id="shop-row" hidden>
-      <img class="cover__logo" id="shop-logo" alt="" hidden>
-      <p class="cover__shop" id="shop-hello"></p>
+      <div class="cover__mark">
+        <img class="cover__logo" id="shop-logo" alt="" hidden>
+        <span class="cover__initial" id="shop-initial" aria-hidden="true"></span>
+      </div>
+      <div class="cover__who">
+        <p class="cover__as"><span data-t="orderingAs"></span><span class="cover__badge" id="member-badge" data-t="memberBadge" hidden></span></p>
+        <p class="cover__shop" id="shop-hello"></p>
+        <button class="cover-link" id="member-logout" type="button" data-t="memberLogout" hidden></button>
+      </div>
     </div>
-    <p class="cover__account">
+    <p class="cover__account" id="member-account">
       <a class="cover-link" id="member-login" href="member.html" data-t="memberLogin"></a>
-      <button class="cover-link" id="member-logout" type="button" data-t="memberLogout" hidden></button>
     </p>
     <div class="cover__actions"><button class="reorder-btn" id="reorder" type="button" hidden></button></div>
   </header>

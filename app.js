@@ -104,7 +104,8 @@
       doneSummary: (n, x, d) => `${n} รายการ · ฿${x} · รับของ ${d}`,
       orderingOff: 'การสั่งออนไลน์จะเปิดอีกครั้งเมื่อราคาสัปดาห์ใหม่ขึ้นระบบ ระหว่างนี้สั่งทาง LINE ได้เลย',
       // shop QR
-      shopHello: (name) => `สั่งในนามร้าน ${name}`,
+      orderingAs: 'สั่งในนามร้าน',
+      memberBadge: 'ร้านสมาชิก',
       reorder: (n) => `สั่งเหมือนครั้งก่อน · ${n} รายการ`,
       reorderDone: (n, gone) => `ใส่ตะกร้าแล้ว ${n} รายการ เช็กจำนวนก่อนสั่ง${gone ? ` (${gone} รายการไม่มีขายสัปดาห์นี้)` : ''}`,
       notMe: 'ไม่ใช่ร้านนี้?',
@@ -211,7 +212,8 @@
       doneSummary: (n, x, d) => `${n === 1 ? '1 item' : `${n} items`} · ฿${x} · delivery ${d}`,
       orderingOff: "Online ordering reopens when the new week's prices are posted. You can order on LINE meanwhile.",
       // shop QR
-      shopHello: (name) => `Ordering as ${name}`,
+      orderingAs: 'Ordering as',
+      memberBadge: 'Member',
       reorder: (n) => `Order same as last time · ${n === 1 ? '1 item' : `${n} items`}`,
       reorderDone: (n, gone) => `Added ${n === 1 ? '1 item' : `${n} items`} — check quantities before ordering.${gone ? ` (${gone} not sold this week)` : ''}`,
       notMe: 'Not your shop?',
@@ -1144,6 +1146,9 @@
     if (m && url) postOnce(url, { contract: 'order.v1', action: 'logout', token: m.token }, 15000);
   }
 
+  // First letter for the logo tile when a shop has no logo; Thai leading vowels (เ แ โ ใ ไ) are skipped.
+  const initialOf = (name) => (String(name || '').match(/[\p{L}\p{N}]/gu) || []).find((c) => !/[เ-ไ]/.test(c)) || '';
+
   // Who the order is for when the form does not ask: the logged-in shop, else the shop from its QR.
   const knownShop = () => state.member || state.shop;
 
@@ -1152,12 +1157,15 @@
     const s = knownShop();
     const member = Boolean(state.member);
     document.getElementById('shop-row').hidden = !s;
-    document.getElementById('shop-hello').textContent = s ? t.shopHello(s.name) : '';
+    document.getElementById('shop-hello').textContent = s ? s.name : '';
+    document.getElementById('shop-initial').textContent = s ? initialOf(s.name) : '';
+    document.getElementById('member-badge').hidden = !member;
     const logo = document.getElementById('shop-logo');
     const logoUrl = member && /^data:image\//.test(state.member.logo || '') ? state.member.logo : '';
     logo.hidden = !logoUrl;
+    document.getElementById('shop-initial').hidden = Boolean(logoUrl);
     if (logoUrl) logo.src = logoUrl; else logo.removeAttribute('src');
-    document.getElementById('member-login').hidden = member;
+    document.getElementById('member-account').hidden = member;
     document.getElementById('member-logout').hidden = !member;
     document.getElementById('shop-forget').hidden = member;   // a login is undone with "log out", on the cover
     document.getElementById('form-shop').hidden = !s;
