@@ -7,6 +7,10 @@ Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ". 
 - AppSheet sandbox "SmartMenu Sandbox DIFOT": step buttons → evidence forms (Form_Pack / Form_Rider / Form_Deliver). See difot-step-flow.md.
 - index.html loads app.js/styles.css with `?v=YYYY-MM-DD` — bump on every code change (GitHub Pages caches 10 min).
 
+## In progress (2026-10-23 day)
+- Sturdier ordering DONE locally (retry + same client_order_id, cart kept, LINE fallback, rate limits). See ordering.md 2026-10-23 (day). **Deploy order matters: Apps Script first (paste Code.gs → run setup() → new version of the same deployment), then push the site** — otherwise the new site's retries could hit the old server, which has no duplicate guard.
+- This PC has no Node.js/Python: local preview uses `.claude/launch.json` "smartmenu-local" (PowerShell static server from the session scratchpad; recreate if gone). `npm run validate` can't run locally → CI on push checks it.
+
 ## Tomorrow's plan (Petch, 2026-10-23 01:29) — in Claude Code
 1. Focus = SmartMenu only (DIFOT/AppSheet parked; it's the teammate's project, Petch only exploring). Design fixes to close the gaps in smartmenu-capacity-risks-login.md:
    - ordering under load (lock/timeout, retry), fallback to LINE when the endpoint fails (keep cart), spam protection, CI that blocks broken pushes, less dependence on one Google account.
@@ -21,6 +25,9 @@ Options offered:
 1. (recommended) Own web app: kanban board เคาน์เตอร์ → จัดของ → ส่งของ → เสร็จ, cards move with required evidence (photo/rider), opens from LINE, same Google Sheet via Apps Script (add doGet list + doPost step/photo upload to Drive). Build as demo on sandbox data first; teammate owns real DIFOT → agree before switching.
 2. Glide on the same Sheet. 3. Lark Base kanban (data moves out).
 If staying on AppSheet: build the confirm step (Status enum + initial "New", Today_Orders filter `[Status]="New"`, action ส่งไปจัดของ with confirm, Code.gs Status 'New' + redeploy same deployment).
+
+## Weekly price update (any session)
+If Petch attaches a new price sheet (PDF/image) and says "อัปราคา": follow README.md → "Update prices" + EXTRACTOR_CONTRACT.md: extract to JSON matching schema/prices.schema.json → `node scripts/publish-prices.mjs incoming.json` (dry-run first, show every WARN to Petch) → Petch pushes in GitHub Desktop. Never hand-edit data/prices/*.json. Current prices valid_to 2026-10-23 → ordering pauses from Sat 24/10 until the new week is published.
 
 ## Things to remember
 - Never write to original DIFOT_Pilot_SU22 (id 1UEI…xvx8). Sandbox only.

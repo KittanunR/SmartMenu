@@ -10,9 +10,9 @@ Scope: SmartMenu website only (not AppSheet/DIFOT) — Petch, 2026-10-23.
 2. Sandbox sheet tab/column names — code writes by header name; renaming Order/Order_Items/Master/Event or their columns breaks orders.
 3. Weekly price publish — ordering pauses after latest.json valid_to.
 4. Broken push (latest.json / app.js / config.json) → site breaks; CI validate warns but does not block Pages deploy.
-5. Public order endpoint — honeypot only, no rate limit → spam orders possible.
+5. Public order endpoint — honeypot only, no rate limit → spam orders possible. **2026-10-23: rate limits (5/h per phone, 40/h site), size + total checks added in Code.gs (not deployed yet).** A determined attacker can still rotate phone numbers; the 40/h cap limits the damage.
 6. Knowledge sits with Petch (+ wiki).
-- To check: what the site shows when the endpoint fails (should fall back to LINE message, keep cart).
+- 2026-10-23: endpoint failure handled — site retries 3× with the same client_order_id (server de-duplicates), keeps the cart, offers LINE. Lock timeout now returns `busy` instead of an error page.
 
 ## Login ideas (customers stop re-typing address; per-group customization)
 - A. Remember details on the device (localStorage) — quick win.

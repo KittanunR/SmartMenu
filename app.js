@@ -8,7 +8,11 @@
   const MAX_QTY = 500;       // contract: qty > 0 and <= 500
   const MAX_LINES = 40;      // contract: 1–40 items
   const LINE_TEXT_MAX = 1000;
-  const SUBMIT_TIMEOUT_MS = 20000;
+  const SUBMIT_TIMEOUT_MS = 30000;   // one attempt; Apps Script cold start + lock wait can take ~25 s
+  const SUBMIT_BUDGET_MS = 75000;    // all attempts together, then the buyer gets the LINE fallback
+  const RETRY_DELAYS_MS = [2000, 5000];
+  // Server answers worth another try. Anything else (bad phone, rate limit, spam) will not change on retry.
+  const RETRYABLE = new Set(['network', 'busy', 'server']);
 
   const UNIT = {
     th: { kg: 'กก.', tray: 'แผง', pack: 'แพ็ก' },
@@ -83,15 +87,18 @@
       eEmpty: 'ตะกร้ายังว่างอยู่',
       submit: (x) => `ยืนยันสั่งซื้อ · ฿${x}`,
       sending: 'กำลังส่งออเดอร์…',
+      resending: (n, max) => `ระบบตอบช้า กำลังลองส่งใหม่ (${n}/${max})…`,
       okTitle: 'รับออเดอร์แล้ว ขอบคุณค่ะ',
       okBody: 'ร้านจะติดต่อกลับเพื่อยืนยันยอดและเวลาส่ง ส่งสรุปเข้า LINE ร้านไว้ด้วย จะได้คุยต่อในแชตได้เลย',
       orderNo: 'เลขที่ออเดอร์',
       pilotTitle: 'อีกขั้นเดียว',
       pilotBody: 'กดปุ่มด้านล่างเพื่อส่งออเดอร์เข้า LINE ร้าน ร้านจะยืนยันยอดและเวลาส่งในแชต',
       failTitle: 'ส่งออเดอร์เข้าระบบยังไม่สำเร็จ',
-      failBody: 'ไม่ต้องกังวล กดส่งสรุปออเดอร์ทาง LINE ได้เลย หรือลองส่งอีกครั้ง',
+      failBody: 'ไม่ต้องกังวล ตะกร้ายังอยู่ครบ กดส่งสรุปออเดอร์ทาง LINE ได้เลย หรือลองส่งอีกครั้ง',
+      failRate: 'ชั่วโมงนี้มีออเดอร์จากเบอร์นี้หลายครั้งแล้ว กดส่งสรุปออเดอร์ทาง LINE แทนได้เลย ร้านจะติดต่อกลับ',
       retry: 'ลองส่งอีกครั้ง',
       sendLine: 'ส่งสรุปออเดอร์เข้า LINE',
+      clearAfterLine: 'ส่งทาง LINE แล้ว ล้างตะกร้า',
       backToMenu: 'กลับไปหน้าเมนู',
       doneSummary: (n, x, d) => `${n} รายการ · ฿${x} · รับของ ${d}`,
       orderingOff: 'การสั่งออนไลน์จะเปิดอีกครั้งเมื่อราคาสัปดาห์ใหม่ขึ้นระบบ ระหว่างนี้สั่งทาง LINE ได้เลย',
@@ -167,15 +174,18 @@
       eEmpty: 'Your cart is empty',
       submit: (x) => `Place order · ฿${x}`,
       sending: 'Sending order…',
+      resending: (n, max) => `Slow connection, trying again (${n}/${max})…`,
       okTitle: 'Order received, thank you',
       okBody: 'The shop will contact you to confirm the total and delivery time. Send the summary to our LINE too, so we can chat there.',
       orderNo: 'Order number',
       pilotTitle: 'One last step',
       pilotBody: 'Tap below to send your order to our LINE. The shop confirms the total and delivery time in the chat.',
       failTitle: "Your order didn't reach us yet",
-      failBody: 'No problem: send the order summary on LINE instead, or try again.',
+      failBody: 'No problem, your cart is still here: send the order summary on LINE instead, or try again.',
+      failRate: 'We already have several orders from this phone in the last hour. Send the summary on LINE instead and the shop will get back to you.',
       retry: 'Try again',
       sendLine: 'Send order to LINE',
+      clearAfterLine: 'Sent on LINE? Clear the cart',
       backToMenu: 'Back to menu',
       doneSummary: (n, x, d) => `${n === 1 ? '1 item' : `${n} items`} · ฿${x} · delivery ${d}`,
       orderingOff: "Online ordering reopens when the new week's prices are posted. You can order on LINE meanwhile.",
@@ -203,8 +213,9 @@
     productBySku: new Map(),
     cart: new Map(),  // sku -> whole-number qty, in the order added
     step: 'cart',     // cart dialog view: cart | form | done
-    last: null,       // { order, status: ok|pilot|fail, id } for the done view
+    last: null,       // { order, status: ok|pilot|fail, id, error, lineSent } for the done view
     busy: false,
+    attempt: 0,       // which send attempt is running (1 = first), for the button label
   };
 
   // ---------- helpers ----------
@@ -901,7 +912,7 @@
     const t = TEXT[state.lang];
     document.getElementById('form-count').textContent = t.lines(state.cart.size);
     document.getElementById('form-sum').textContent = `฿${formatPrice(cartTotal(), t)}`;
-    document.getElementById('form-submit-label').textContent = state.busy ? t.sending : t.submit(formatPrice(cartTotal(), t));
+    document.getElementById('form-submit-label').textContent = busyLabel(t) || t.submit(formatPrice(cartTotal(), t));
     const date = document.getElementById('f-date');
     date.min = ymd(tomorrow());
     if (!date.value || date.value < date.min) date.value = date.min;
@@ -1006,50 +1017,109 @@
     if (!orderingOpen()) { formErr.textContent = t.orderingOff; formErr.hidden = false; return; }
     if (!validateForm()) return;
     saveCustomer();
-    state.last = { order: buildOrder(), status: 'pending', id: null };
+    const order = buildOrder();
+    order.client_order_id = clientOrderId(order);
+    state.last = { order, status: 'pending', id: null, error: null, lineSent: false };
     await send();
   }
 
-  // POST per docs/ORDER_CONTRACT.md. No endpoint configured = pilot: the LINE message is the order.
-  async function send() {
-    const url = String(state.config.order_endpoint || '').trim();
-    if (!url) { state.last.status = 'pilot'; showStep('done'); return; }
-    setBusy(true);
+  // One id per distinct order, kept in the buyer's browser across retries and reloads. A request that
+  // timed out may still have been written, so the server answers a repeated id with the first order_id
+  // instead of writing it twice. Changing the cart or the form makes a new id.
+  function orderKey(o) {
+    return JSON.stringify([o.price_week, o.customer, o.delivery, o.note, o.items.map((i) => [i.sku, i.qty])]);
+  }
+  function newId() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+  function clientOrderId(order) {
+    const key = orderKey(order);
+    let saved = null;
+    try { saved = JSON.parse(storageGet('menu-pending') || 'null'); } catch (_) { saved = null; }
+    if (saved && saved.key === key && typeof saved.id === 'string') return saved.id;
+    const id = newId();
+    storageSet('menu-pending', JSON.stringify({ key, id }));
+    return id;
+  }
+
+  const sleep = (ms) => new Promise((r) => { setTimeout(r, ms); });
+
+  // One POST per docs/ORDER_CONTRACT.md → { ok, id } or { ok: false, error, retry }.
+  async function postOnce(url, order, timeoutMs) {
     const ctl = typeof AbortController === 'function' ? new AbortController() : null;
-    const timer = ctl ? setTimeout(() => ctl.abort(), SUBMIT_TIMEOUT_MS) : 0;
+    const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : 0;
     try {
       // text/plain keeps this a "simple" request: Apps Script cannot answer a CORS preflight.
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(state.last.order),
+        body: JSON.stringify(order),
         signal: ctl ? ctl.signal : undefined,
       });
       const data = await res.json();
       if (data && data.ok === true && typeof data.order_id === 'string' && data.order_id) {
-        state.last.status = 'ok';
-        state.last.id = data.order_id;
-        clearCart();
-      } else {
-        state.last.status = 'fail';
+        return { ok: true, id: data.order_id };
       }
+      const error = data && typeof data.error === 'string' ? data.error : 'server';
+      return { ok: false, error, retry: RETRYABLE.has(error) };
     } catch (_) {
-      state.last.status = 'fail';
+      // Offline, timed out, or an Apps Script error page instead of JSON.
+      return { ok: false, error: 'network', retry: true };
     } finally {
       clearTimeout(timer);
+    }
+  }
+
+  // Tries a few times with a pause between, within SUBMIT_BUDGET_MS. Same client_order_id every time,
+  // so a retry never makes a second order. No endpoint configured = pilot: the LINE message is the order.
+  async function send() {
+    const url = String(state.config.order_endpoint || '').trim();
+    if (!url) { state.last.status = 'pilot'; showStep('done'); return; }
+    const deadline = Date.now() + SUBMIT_BUDGET_MS;
+    let result = null;
+    setBusy(true);
+    try {
+      for (let attempt = 1; ; attempt += 1) {
+        state.attempt = attempt;
+        setBusy(true);
+        result = await postOnce(url, state.last.order, Math.max(5000, Math.min(SUBMIT_TIMEOUT_MS, deadline - Date.now())));
+        const wait = RETRY_DELAYS_MS[attempt - 1];
+        if (result.ok || !result.retry || wait == null || Date.now() + wait + 5000 > deadline) break;
+        await sleep(wait);
+      }
+    } finally {
+      state.attempt = 0;
       setBusy(false);
+    }
+    if (result.ok) {
+      state.last.status = 'ok';
+      state.last.id = result.id;
+      clearCart();
+      storageSet('menu-pending', '');
+    } else {
+      // The cart stays (here and in localStorage) until the order really went somewhere.
+      state.last.status = 'fail';
+      state.last.error = result.error;
     }
     showStep('done');
   }
 
+  function busyLabel(t) {
+    if (!state.busy) return '';
+    return state.attempt > 1 ? t.resending(state.attempt, RETRY_DELAYS_MS.length + 1) : t.sending;
+  }
+
   function setBusy(on) {
     state.busy = on;
+    const t = TEXT[state.lang];
     const btn = document.getElementById('form-submit');
     btn.disabled = on;
     btn.setAttribute('aria-busy', String(on));
     document.getElementById('form-spinner').hidden = !on;
     const retry = document.getElementById('done-retry');
     retry.disabled = on;
+    retry.textContent = busyLabel(t) || t.retry;
     if (state.step === 'form') renderFormTotals();
   }
 
@@ -1068,7 +1138,8 @@
     if (!last) return;
     const o = last.order;
     const title = { ok: t.okTitle, pilot: t.pilotTitle, fail: t.failTitle }[last.status] || t.pilotTitle;
-    const body = { ok: t.okBody, pilot: t.pilotBody, fail: t.failBody }[last.status] || t.pilotBody;
+    const failBody = last.error === 'rate' ? t.failRate : t.failBody;
+    const body = { ok: t.okBody, pilot: t.pilotBody, fail: failBody }[last.status] || t.pilotBody;
     document.getElementById('cart-done').dataset.status = last.status;
     document.getElementById('done-title').textContent = title;
     document.getElementById('done-body').textContent = body;
@@ -1076,7 +1147,8 @@
     document.getElementById('done-id').textContent = last.id || '';
     document.getElementById('done-summary').textContent =
       t.doneSummary(o.items.length, formatPrice(o.total, t), deliveryLabel(o.delivery.date, t));
-    document.getElementById('done-retry').hidden = last.status !== 'fail';
+    document.getElementById('done-retry').hidden = last.status !== 'fail' || last.error === 'rate';
+    document.getElementById('done-clear').hidden = !(last.status === 'fail' && last.lineSent && state.cart.size);
     document.getElementById('done-line').href = lineMessageUrl(lineText(o, last.id, t));
   }
 
@@ -1175,9 +1247,17 @@
     document.getElementById('cart-form').addEventListener('submit', onSubmit);
     document.getElementById('done-retry').addEventListener('click', () => { if (state.last) send(); });
     document.getElementById('done-menu').addEventListener('click', closeCart);
-    // Pilot / fallback: the LINE message is the order, so the cart is done once it is sent.
+    // Pilot: the LINE message is the order, so the cart is done once it is sent.
+    // Failed send: keep the cart (LINE may not have opened) and offer to clear it once the buyer is back.
     document.getElementById('done-line').addEventListener('click', () => {
-      if (state.last && state.last.status !== 'ok') clearCart();
+      if (!state.last) return;
+      if (state.last.status === 'pilot') clearCart();
+      if (state.last.status === 'fail') { state.last.lineSent = true; renderDone(); }
+    });
+    document.getElementById('done-clear').addEventListener('click', () => {
+      clearCart();
+      storageSet('menu-pending', '');
+      closeCart();
     });
     ['f-shop', 'f-phone', 'f-date'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => setFieldError(id, ''));

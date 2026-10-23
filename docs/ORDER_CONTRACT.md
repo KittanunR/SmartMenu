@@ -18,11 +18,17 @@ Request: `fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset
   "total": 240,
   "lang": "th",
   "client_ts": "2026-10-22T20:40:00+07:00",
-  "hp": ""
+  "hp": "",
+  "client_order_id": "bef3e830-0628-4e33-bb42-24dde8719198"
 }
 ```
-Rules: phone = 9–10 digits starting 0; 1–40 items; qty > 0 and ≤ 500; unit_price = the tier price for that qty from latest.json; `hp` is a honeypot and must be empty.
+Rules: phone = 9–10 digits starting 0; 1–40 items; qty > 0 and ≤ 500; unit_price = the tier price for that qty from latest.json; line_total = qty × unit_price and total = sum of line_total (±0.01); `hp` is a honeypot and must be empty; body ≤ 30,000 chars.
+
+`client_order_id` (optional, added 2026-10-23): 8–64 chars `[A-Za-z0-9-]`, made once per distinct order in the buyer's browser (`localStorage` `menu-pending`) and sent unchanged on every retry. The server answers a repeated id with the first order's id (`"duplicate":true`) and writes nothing. Changing the cart or the form makes a new id.
 
 Response JSON: `{"ok":true,"order_id":"W261022-001"}` or `{"ok":false,"error":"<code>"}`.
+Error codes: `busy` (lock not free in 20 s) and `server` → the site retries. `rate` (≥5 orders/hour from one phone, or ≥40/hour from the whole site), `spam`, `too_big`, `bad_json`, and validation codes (`phone`, `items`, `total`, …) are final → the site shows the LINE fallback.
 
-Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty), Order_Items +N rows, Event +1 row (Station="Web", Action="Ordered"), Master +1 row (Type="Customer") if the phone is new.
+Site behaviour: up to 3 attempts (pauses 2 s, 5 s; 30 s timeout each; 75 s in all). If none succeeds the cart stays, and the done view offers "Send order to LINE" + "Try again"; after tapping LINE it also offers "Sent on LINE? Clear the cart".
+
+Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty, Web_Client_ID), Order_Items +N rows (one write), Event +1 row (Station="Web", Action="Ordered"), Master +1 row (Type="Customer") if the phone is new.
