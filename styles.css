@@ -525,3 +525,34 @@ button.order-btn, .send-line { width: 100%; border: 0; cursor: pointer; }
   .cover__inner, .cover__top, .cover__title, .cover__cadence, .cover__shop, .cover__actions { max-width: 696px; margin-left: auto; margin-right: auto; }
   .sheet { border-radius: var(--r-hair); bottom: var(--s5); }
 }
+
+/* ---------- shop login (Phase 3): cover account row + member.html ---------- */
+.cover__member { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); }
+.cover__logo { width: 48px; height: 48px; flex: none; object-fit: contain; border-radius: var(--r-hair); background: var(--white); }
+.cover__member .cover__shop { margin: 0; }   /* beats the wide-screen auto margins on .cover__shop */
+.cover-link {
+  min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: inline-flex; align-items: center;
+  color: var(--mint); font: 500 var(--t14)/1.2 var(--text);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.cover-link:focus-visible { outline-color: var(--white); }
+.cover__account { margin-top: var(--s1); }
+.cover--slim { padding-bottom: var(--s4); }
+.member { padding-bottom: var(--s6); }
+.member-page { max-width: 480px; padding-top: var(--s4); }
+.member__title { margin-top: var(--s2); font: 600 var(--t28)/1.25 var(--display); color: var(--forest); }
+.member__intro { margin-top: var(--s2); color: var(--grey); text-wrap: pretty; }
+.member__go { display: flex; }
+.member__help { margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: var(--t14); color: var(--grey); }
+.member__line { margin-top: var(--s3); }
+.pw { position: relative; }
+.field .pw input { padding-right: 72px; }
+.pw__toggle {
+  position: absolute; top: 0; right: 0; height: 100%; min-width: 64px; padding: 0 var(--s3);
+  border: 0; background: none; cursor: pointer; color: var(--forest); font: 500 var(--t14)/1 var(--text);
+}
+.sprite { position: absolute; }
+@media (min-width: 640px) {
+  .cover__member, .cover__account { max-width: 696px; margin-left: auto; margin-right: auto; }
+}

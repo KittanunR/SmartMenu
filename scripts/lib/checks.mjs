@@ -277,8 +277,8 @@ export function checkRepo() {
   return { errors, warnings };
 }
 
-const PAGES = ['index.html', 'tools/shop-qr.html'];
-const SCRIPTS = ['app.js', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Bcrypt.gs'];
+const PAGES = ['index.html', 'member.html', 'tools/shop-qr.html'];
+const SCRIPTS = ['app.js', 'member.js', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Member.gs', 'backend/apps-script/Bcrypt.gs'];
 const CONFIG_STRINGS = ['shop_name_th', 'shop_name_en', 'line_oa_url', 'line_oa_id', 'shop_id'];
 const ENDPOINT = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 

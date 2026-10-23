@@ -113,8 +113,8 @@ function newShopCode_() {
 
 const isInactive_ = v => ['no', 'false', 'n', '0'].indexOf(String(v).trim().toLowerCase()) !== -1;
 
-/** The active customer whose Shop_Code is `code`, or null. */
-function findShop_(ss, code) {
+/** The active customer whose Shop_Code is `code` (or whose Code is `code` when field = 'code'), or null. */
+function findShop_(ss, code, field) {
   const data = ss.getSheetByName('Master').getDataRange().getValues();
   const h = data[0];
   const col = name => h.indexOf(name);
@@ -124,7 +124,7 @@ function findShop_(ss, code) {
   const get = (row, k) => (i[k] === -1 ? '' : String(row[i[k]] == null ? '' : row[i[k]]).trim());
   for (let r = 1; r < data.length; r++) {
     const row = data[r];
-    if (get(row, 'shop') !== code || get(row, 'type') !== 'Customer' || isInactive_(row[i.active])) continue;
+    if (get(row, field === 'code' ? 'code' : 'shop') !== code || get(row, 'type') !== 'Customer' || isInactive_(row[i.active])) continue;
     return { id: get(row, 'code'), name: get(row, 'name'), phone: get(row, 'phone').replace(/\D/g, ''),
       address: get(row, 'address'), contact: get(row, 'contact'), line: get(row, 'line') };
   }
@@ -169,6 +169,7 @@ function doPost(e) {
   let o;
   try { o = JSON.parse(body); } catch (err) { return json_({ ok: false, error: 'bad_json' }); }
   if (o && o.action === 'shop') return json_(shopLookup_(o.shop_code));
+  if (o && MEMBER_ACTIONS[o.action] === true) return json_(memberAction_(o));   // shop login: Member.gs
   const bad = validate_(o);
   if (bad) return json_({ ok: false, error: bad });
 
@@ -189,11 +190,19 @@ function doPost(e) {
       return json_({ ok: true, order_id: earlier, duplicate: true });
     }
 
-    // Ordered from a shop's own QR: name, phone and contact come from Master, not from the browser.
+    // Logged-in shop (Member.gs) or a shop's own QR: name, phone and contact come from Master, not from the browser.
+    // A login wins over a QR code in the same order.
     let shop = null;
-    if (o.shop_code) {
+    const member = !!o.session;
+    if (member) {
+      const s = sessionOf_(ss, o.session);
+      shop = s && findShop_(ss, s.id, 'code');
+      if (!shop) return json_({ ok: false, error: 'session' });
+    } else if (o.shop_code) {
       shop = findShop_(ss, o.shop_code);
       if (!shop) return json_({ ok: false, error: 'unknown_shop' });
+    }
+    if (shop) {
       o.customer = { shop_name: shop.name, contact_name: shop.contact, phone: shop.phone, line_name: shop.line };
       o.delivery = o.delivery || {};
       if (!o.delivery.address_note) o.delivery.address_note = shop.address;
@@ -216,7 +225,7 @@ function doPost(e) {
       Source: 'Web', Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Delivery_Date: (o.delivery && o.delivery.date) || '',
       Web_Note: [o.delivery && o.delivery.address_note, o.note, o.customer.line_name && ('LINE: ' + o.customer.line_name)].filter(Boolean).join(' | '),
-      Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: shop ? 'shop_qr' : 'guest'
+      Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: member ? 'member' : shop ? 'shop_qr' : 'guest'
     });
 
     appendRowsByHeader_(ss.getSheetByName('Order_Items'), o.items.map((it, i) => ({
@@ -227,7 +236,7 @@ function doPost(e) {
     appendByHeader_(ss.getSheetByName('Event'), {
       Event_ID: 'EW' + Utilities.getUuid().slice(0, 8), Order_ID: orderId, Shop_ID: SHOP_ID,
       Station: 'Web', Action: 'Ordered', Timestamp: now, User: 'web',
-      Note: o.items.length + ' items, ฿' + o.total + (shop ? ', shop QR' : '')
+      Note: o.items.length + ' items, ฿' + o.total + (member ? ', member' : shop ? ', shop QR' : '')
     });
     SpreadsheetApp.flush();
 
@@ -248,10 +257,12 @@ function validate_(o) {
   if (o.hp) return 'spam';
   if (o.client_order_id != null && !/^[A-Za-z0-9-]{8,64}$/.test(String(o.client_order_id))) return 'client_order_id';
   if (o.shop_code != null && !/^[A-Z2-9]{10}$/.test(String(o.shop_code))) return 'shop_code';
+  if (o.session != null && !TOKEN_RE.test(String(o.session))) return 'session';
   const c = o.customer || {};
-  // With a shop code the shop's details come from Master (see doPost), so the form may leave them out.
-  if (!o.shop_code && (!c.shop_name || String(c.shop_name).length > 120)) return 'shop_name';
-  if (!o.shop_code && !/^0\d{8,9}$/.test(String(c.phone || ''))) return 'phone';
+  // With a login or a shop code the shop's details come from Master (see doPost), so the form may leave them out.
+  const known = o.shop_code || o.session;
+  if (!known && (!c.shop_name || String(c.shop_name).length > 120)) return 'shop_name';
+  if (!known && !/^0\d{8,9}$/.test(String(c.phone || ''))) return 'phone';
   if (String(c.contact_name || '').length > 120 || String(c.line_name || '').length > 120) return 'customer';
   const d = o.delivery || {};
   if (d.date && !/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))) return 'date';

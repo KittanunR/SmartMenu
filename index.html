@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'self'; object-src 'none'">
   <meta name="theme-color" content="#1A4A20">
   <meta name="description" content="Betagro Shop Sukhumvit — weekly wholesale prices for pork, chicken and eggs, with quantity discounts.">
   <title>Betagro Shop Price Menu</title>
   <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/prompt-latin-300.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2026-10-23f">
-  <script src="app.js?v=2026-10-23f" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2026-10-24a">
+  <script src="app.js?v=2026-10-24a" defer></script>
 </head>
 <body>
   <header class="cover">
@@ -26,7 +27,15 @@
       <span class="cover__date" id="asof-date"></span>
     </h1>
     <p class="cover__cadence" id="cadence"></p>
-    <p class="cover__shop" id="shop-hello" hidden></p>
+    <!-- Logged-in shop (member.html) or the shop's own QR: who is ordering, with the logo for a login. -->
+    <div class="cover__member" id="shop-row" hidden>
+      <img class="cover__logo" id="shop-logo" alt="" hidden>
+      <p class="cover__shop" id="shop-hello"></p>
+    </div>
+    <p class="cover__account">
+      <a class="cover-link" id="member-login" href="member.html" data-t="memberLogin"></a>
+      <button class="cover-link" id="member-logout" type="button" data-t="memberLogout" hidden></button>
+    </p>
     <div class="cover__actions"><button class="reorder-btn" id="reorder" type="button" hidden></button></div>
   </header>
 
@@ -215,7 +224,7 @@
     </div>
   </dialog>
 
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="sprite" width="0" height="0" aria-hidden="true">
     <symbol id="i-bag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
     <symbol id="i-line" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.6 2 11.04c0 3.98 3.55 7.31 8.35 7.94.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.73-3.37 7.82-5.78C21.24 14.4 22 12.8 22 11.04 22 6.6 17.52 3 12 3zM8.3 13.4H6.3a.52.52 0 0 1-.52-.52V9.04a.52.52 0 1 1 1.04 0v3.32H8.3a.52.52 0 1 1 0 1.04zm2.07-.52a.52.52 0 1 1-1.04 0V9.04a.52.52 0 1 1 1.04 0v3.84zm4.8 0a.52.52 0 0 1-.94.31l-1.97-2.68v2.37a.52.52 0 1 1-1.04 0V9.04a.52.52 0 0 1 .94-.31l1.97 2.68V9.04a.52.52 0 1 1 1.04 0v3.84zm3.23-2.44a.52.52 0 1 1 0 1.04h-1.48v.88h1.48a.52.52 0 1 1 0 1.04H16.4a.52.52 0 0 1-.52-.52V9.04c0-.29.23-.52.52-.52h2a.52.52 0 1 1 0 1.04h-1.48v.88h1.48z"/></symbol>
     <!-- Category badges: simple self-drawn silhouettes, white on the leaf disc. -->

@@ -114,11 +114,18 @@
       phAddressOther: 'เว้นว่างไว้ = ส่งที่อยู่ร้านเดิม',
       shopGone: 'QR ร้านนี้ใช้ไม่ได้แล้ว กรอกข้อมูลร้านตอนสั่งได้เลย หรือขอ QR ใหม่จากพนักงานขาย',
       privacy: 'ชื่อร้าน เบอร์โทร และที่อยู่ ใช้เพื่อจัดส่งและติดต่อเรื่องออเดอร์เท่านั้น',
+      // shop login (member.html)
+      memberLogin: 'เข้าสู่ระบบร้านค้า',
+      memberLogout: 'ออกจากระบบ',
+      memberWins: (n) => `เครื่องนี้เข้าสู่ระบบเป็นร้าน ${n} อยู่ ถ้าจะใช้ QR ของร้านอื่น ให้ออกจากระบบก่อน`,
+      memberExpired: 'หมดเวลาเข้าสู่ระบบของร้าน เข้าสู่ระบบอีกครั้งได้ที่ "เข้าสู่ระบบร้านค้า"',
+      loggedOut: 'ออกจากระบบแล้ว',
+      failSession: 'หมดเวลาเข้าสู่ระบบของร้าน ตะกร้ายังอยู่ครบ เข้าสู่ระบบอีกครั้ง หรือกรอกข้อมูลร้านแล้วกดสั่งใหม่',
       msg: {
         head: (id) => (id ? `ออเดอร์ ${id}` : 'ออเดอร์ใหม่จากเมนูออนไลน์'),
         shop: 'ร้าน', contact: 'ผู้ติดต่อ', phone: 'โทร', line: 'LINE', date: 'รับของ',
         address: 'ที่อยู่', note: 'หมายเหตุ', total: 'รวม', more: (n) => `…และอีก ${n} รายการ`,
-        viaQr: 'สั่งผ่าน QR ประจำร้าน', ref: 'อ้างอิง',
+        viaQr: 'สั่งผ่าน QR ประจำร้าน', viaMember: 'สั่งผ่านบัญชีร้าน', ref: 'อ้างอิง',
       },
     },
     en: {
@@ -214,11 +221,18 @@
       phAddressOther: 'Leave empty to use your saved address',
       shopGone: "This shop QR no longer works. Enter your shop details when you order, or ask your sales rep for a new QR.",
       privacy: 'Your shop name, phone and address are used only to deliver and discuss your orders.',
+      // shop login (member.html)
+      memberLogin: 'Shop login',
+      memberLogout: 'Log out',
+      memberWins: (n) => `This phone is logged in as ${n}. To use another shop's QR, log out first.`,
+      memberExpired: 'Your shop login has ended. Log in again with "Shop login".',
+      loggedOut: 'Logged out',
+      failSession: 'Your shop login has ended. Your cart is still here: log in again, or fill in your shop details and order again.',
       msg: {
         head: (id) => (id ? `Order ${id}` : 'New order from the online menu'),
         shop: 'Shop', contact: 'Contact', phone: 'Phone', line: 'LINE', date: 'Delivery',
         address: 'Address', note: 'Note', total: 'Total', more: (n) => `…and ${n} more items`,
-        viaQr: 'Ordered with shop QR', ref: 'Ref',
+        viaQr: 'Ordered with shop QR', viaMember: 'Ordered from the shop account', ref: 'Ref',
       },
     },
   };
@@ -243,6 +257,7 @@
     busy: false,
     attempt: 0,       // which send attempt is running (1 = first), for the button label
     shop: null,       // { code, name, phone_masked, address_masked } once the shop's own QR link is confirmed
+    member: null,     // { token, name, phone_masked, address_masked, logo_id, logo } after a shop login (member.html)
   };
 
   // ---------- helpers ----------
@@ -1078,16 +1093,73 @@
       renderShop();
     } else if (res.error === 'unknown_shop') {
       forgetShop();
-      if (fromScan) flash(TEXT[state.lang].shopGone);
+      if (fromScan && !state.member) flash(TEXT[state.lang].shopGone);   // logged in: the login notice stays
     }
   }
 
+  // ---------- shop login (member.html saves the session; Member.gs on Apps Script checks it) ----------
+  // The token is a key to this shop's account: it goes only to our order endpoint. A login wins over a shop QR.
+  const MEMBER_KEY = 'menu-member';
+  const TOKEN = /^[0-9a-f]{64}$/;
+
+  function loadMember() {
+    let saved = null;
+    try { saved = JSON.parse(storageGet(MEMBER_KEY) || 'null'); } catch (_) { saved = null; }
+    state.member = saved && TOKEN.test(saved.token || '') && typeof saved.name === 'string' && saved.name ? saved : null;
+  }
+
+  function forgetMember() {
+    state.member = null;
+    storageSet(MEMBER_KEY, '');
+    renderShop();
+  }
+
+  // Refreshes name / address / logo in the background. A dead session (reset, closed, 90 days) logs out here.
+  async function checkMember() {
+    const m = state.member;
+    const url = String(state.config.order_endpoint || '').trim();
+    if (!m || !url) return;
+    const res = await postOnce(url, { contract: 'order.v1', action: 'me', token: m.token, logo_id: m.logo_id || '' }, 15000);
+    if (state.member !== m) return;
+    if (res.ok && res.shop && typeof res.shop.name === 'string' && res.shop.name) {
+      const s = res.shop;
+      const logoId = String(s.logo_id || '');
+      let logo = logoId && logoId === m.logo_id ? m.logo : '';
+      if (/^data:image\/(png|jpeg|webp);base64,/.test(s.logo_data_url || '')) logo = s.logo_data_url;
+      state.member = { token: m.token, name: s.name, phone_masked: String(s.phone_masked || ''),
+        address_masked: String(s.address_masked || ''), logo_id: logo ? logoId : '', logo };
+      storageSet(MEMBER_KEY, JSON.stringify(state.member));
+      renderShop();
+    } else if (res.error === 'session') {
+      forgetMember();
+      flash(TEXT[state.lang].memberExpired);
+    }
+  }
+
+  function logoutMember() {
+    const m = state.member;
+    const url = String(state.config.order_endpoint || '').trim();
+    forgetMember();
+    flash(TEXT[state.lang].loggedOut);
+    if (m && url) postOnce(url, { contract: 'order.v1', action: 'logout', token: m.token }, 15000);
+  }
+
+  // Who the order is for when the form does not ask: the logged-in shop, else the shop from its QR.
+  const knownShop = () => state.member || state.shop;
+
   function renderShop() {
     const t = TEXT[state.lang];
-    const s = state.shop;
-    const hello = document.getElementById('shop-hello');
-    hello.hidden = !s;
-    hello.textContent = s ? t.shopHello(s.name) : '';
+    const s = knownShop();
+    const member = Boolean(state.member);
+    document.getElementById('shop-row').hidden = !s;
+    document.getElementById('shop-hello').textContent = s ? t.shopHello(s.name) : '';
+    const logo = document.getElementById('shop-logo');
+    const logoUrl = member && /^data:image\//.test(state.member.logo || '') ? state.member.logo : '';
+    logo.hidden = !logoUrl;
+    if (logoUrl) logo.src = logoUrl; else logo.removeAttribute('src');
+    document.getElementById('member-login').hidden = member;
+    document.getElementById('member-logout').hidden = !member;
+    document.getElementById('shop-forget').hidden = member;   // a login is undone with "log out", on the cover
     document.getElementById('form-shop').hidden = !s;
     document.getElementById('form-guest').hidden = Boolean(s);
     if (s) {
@@ -1118,7 +1190,7 @@
     const t = TEXT[state.lang];
     const phone = digits(document.getElementById('f-phone').value);
     const date = document.getElementById('f-date').value;
-    const known = Boolean(state.shop);   // shop QR: name and phone come from the shop record
+    const known = Boolean(knownShop());   // login or shop QR: name and phone come from the shop record
     const results = [
       setFieldError('f-shop', known || clean(document.getElementById('f-shop').value, 80) ? '' : t.eShop),
       setFieldError('f-phone', known || /^0\d{8,9}$/.test(phone) ? '' : t.ePhone),
@@ -1140,7 +1212,7 @@
       unit_price: l.unitPrice,
       line_total: l.lineTotal,
     }));
-    const shop = state.shop;
+    const shop = knownShop();
     const order = {
       contract: 'order.v1',
       shop_id: state.config.shop_id || '',
@@ -1161,7 +1233,8 @@
       client_ts: isoLocal(new Date()),
       hp: document.getElementById('f-hp').value,
     };
-    if (shop) order.shop_code = shop.code;
+    if (state.member) order.session = state.member.token;
+    else if (shop) order.shop_code = shop.code;
     return order;
   }
 
@@ -1264,6 +1337,8 @@
       state.last.error = result.error || 'server';
       // The shop's code was retired since the menu opened: next time the form asks for details again.
       if (result.error === 'unknown_shop') forgetShop();
+      // The login ended (reset, closed, 90 days): the form asks for the shop's details again.
+      if (result.error === 'session') forgetMember();
     }
     showStep('done');
   }
@@ -1302,7 +1377,8 @@
     const o = last.order;
     const title = { ok: t.okTitle, pilot: t.pilotTitle, fail: t.failTitle }[last.status] || t.pilotTitle;
     // network / busy / server: the order may have been written before the answer got lost, so retry before LINE.
-    const failBody = last.error === 'rate' ? t.failRate : RETRYABLE.has(last.error) ? t.failMaybe : t.failBody;
+    const failBody = last.error === 'rate' ? t.failRate : last.error === 'session' ? t.failSession
+      : RETRYABLE.has(last.error) ? t.failMaybe : t.failBody;
     const body = { ok: t.okBody, pilot: t.pilotBody, fail: failBody }[last.status] || t.pilotBody;
     document.getElementById('cart-done').dataset.status = last.status;
     document.getElementById('done-title').textContent = title;
@@ -1311,7 +1387,7 @@
     document.getElementById('done-id').textContent = last.id || '';
     document.getElementById('done-summary').textContent =
       t.doneSummary(o.items.length, formatPrice(o.total, t), deliveryLabel(o.delivery.date, t));
-    document.getElementById('done-retry').hidden = last.status !== 'fail' || last.error === 'rate';
+    document.getElementById('done-retry').hidden = last.status !== 'fail' || last.error === 'rate' || last.error === 'session';
     document.getElementById('done-clear').hidden = !(last.status === 'fail' && last.lineSent && state.cart.size);
     document.getElementById('done-line').href = lineMessageUrl(lineText(o, last.id, t));
   }
@@ -1326,7 +1402,8 @@
     const m = t.msg;
     const c = o.customer;
     const head = [m.head(id), `${m.shop}: ${c.shop_name}`];
-    if (o.shop_code) head.push(m.viaQr);   // the shop knows this customer; no phone in the browser
+    if (o.session) head.push(m.viaMember);   // the shop knows this customer; no phone in the browser
+    else if (o.shop_code) head.push(m.viaQr);
     // No order number yet: the start of Web_Client_ID lets staff find it in the sheet if it did arrive.
     if (!id && o.client_order_id) head.push(`${m.ref}: ${String(o.client_order_id).slice(0, 8)}`);
     if (c.contact_name) head.push(`${m.contact}: ${c.contact_name}`);
@@ -1392,6 +1469,7 @@
   async function boot() {
     const fromScan = takeShopCodeFromUrl();
     loadShop();
+    loadMember();
     document.querySelectorAll('.lang button').forEach((b) => {
       b.addEventListener('click', () => setLanguage(b.dataset.lang));
     });
@@ -1430,6 +1508,7 @@
       closeCart();
     });
     document.getElementById('reorder').addEventListener('click', reorder);
+    document.getElementById('member-logout').addEventListener('click', logoutMember);
     document.getElementById('shop-forget').addEventListener('click', () => {
       forgetShop();
       document.getElementById('f-shop').focus();
@@ -1471,6 +1550,8 @@
 
     render();
     checkShop(fromScan);   // in the background: the menu never waits for it
+    checkMember();
+    if (fromScan && state.member) flash(TEXT[state.lang].memberWins(state.member.name));
   }
 
   boot();

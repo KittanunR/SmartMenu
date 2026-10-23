@@ -342,7 +342,7 @@
     if (!res.ok) { $('toast').hidden = true; return formErr(errText(res), ['name', 'phone', 'contact', 'line', 'address'].indexOf(res.error) !== -1 ? res.error : (res.error === 'phone_taken' ? 'phone' : '')); }
     $('dlg-shop').close();
     replaceShop(res.shop);
-    if (res.temp_password) { $('toast').hidden = true; showSecret(res.shop, res.temp_password); }
+    if (res.temp_password) { $('toast').hidden = true; showSecret(res.shop, res.temp_password, res.login_url); }
     else toast('บันทึกแล้ว');
   }
 
@@ -418,7 +418,7 @@
     if (!res.ok) return toast(errText(res), true);
     $('toast').hidden = true;
     replaceShop(res.shop);
-    showSecret(res.shop, res.temp_password);
+    showSecret(res.shop, res.temp_password, res.login_url);
   }
 
   async function disable(s) {
@@ -431,7 +431,7 @@
     toast('ปิดบัญชีแล้ว');
   }
 
-  function showSecret(shop, temp) {
+  function showSecret(shop, temp, loginUrl) {
     $('secret-shop').textContent = shop.name + ' (' + shop.id + ')';
     $('secret').textContent = temp;
     $('secret-msg').textContent = [
@@ -440,7 +440,8 @@
       'รหัสผ่านชั่วคราว: ' + temp,
       'ใช้ได้ถึง: ' + dateTh(shop.temp_expires_at),
       'เข้าครั้งแรกระบบจะให้ตั้งรหัสผ่านใหม่ของร้านเอง',
-    ].join('\n');
+      loginUrl ? 'เข้าระบบที่: ' + loginUrl : '',
+    ].filter(Boolean).join('\n');
     $('dlg-secret').showModal();
   }
 

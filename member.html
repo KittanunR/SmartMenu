@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1A4A20">
+  <title>เข้าสู่ระบบร้านค้า · Betagro Shop</title>
+  <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=2026-10-24a">
+  <script src="member.js?v=2026-10-24a" defer></script>
+</head>
+<body class="member">
+  <!-- Shop login (Phase 3). The session token is kept in this browser only; see member.js. -->
+  <header class="cover cover--slim">
+    <div class="cover__top">
+      <p class="wordmark"><span class="wordmark__brand" lang="en">Betagro Shop</span><span class="wordmark__branch" id="shop-branch"></span></p>
+      <div class="lang" role="group" aria-label="Language / ภาษา">
+        <button type="button" data-lang="th" lang="th">ไทย</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page member-page">
+    <a class="back-btn" href="./">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>
+      <span data-t="backToMenu"></span>
+    </a>
+
+    <!-- 1. phone + password -->
+    <section id="v-login">
+      <h1 class="member__title" data-t="loginTitle"></h1>
+      <p class="member__intro" data-t="loginIntro"></p>
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="l-phone" data-t="phone"></label>
+          <input id="l-phone" name="phone" type="tel" inputmode="numeric" autocomplete="username" maxlength="14" placeholder="0812345678" required>
+        </div>
+        <div class="field">
+          <label for="l-password" data-t="password"></label>
+          <div class="pw">
+            <input id="l-password" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+            <button class="pw__toggle" type="button" data-for="l-password" data-t="show"></button>
+          </div>
+          <p class="field__hint" data-t="tempHint"></p>
+        </div>
+        <p class="form__error" id="login-error" role="alert" hidden></p>
+        <button class="order-btn" id="login-submit" type="submit">
+          <span class="spinner" aria-hidden="true" hidden></span>
+          <span data-t="loginBtn"></span>
+        </button>
+      </form>
+      <div class="member__help">
+        <p data-t="forgot"></p>
+        <a class="line-btn member__line" id="m-line" href="#" target="_blank" rel="noopener" data-t="askLine"></a>
+      </div>
+    </section>
+
+    <!-- 2. first login: the shop sets its own password -->
+    <section id="v-new" hidden>
+      <h1 class="member__title" data-t="newTitle"></h1>
+      <p class="member__intro" data-t="newIntro"></p>
+      <form id="new-form" novalidate>
+        <!-- Lets password managers save the new password under the right phone number. -->
+        <input id="n-user" type="text" autocomplete="username" hidden>
+        <div class="field">
+          <label for="n-password" data-t="newPassword"></label>
+          <div class="pw">
+            <input id="n-password" name="new_password" type="password" autocomplete="new-password" maxlength="200" required>
+            <button class="pw__toggle" type="button" data-for="n-password" data-t="show"></button>
+          </div>
+          <p class="field__hint" data-t="rules"></p>
+        </div>
+        <div class="field">
+          <label for="n-confirm" data-t="confirmPassword"></label>
+          <input id="n-confirm" name="confirm" type="password" autocomplete="new-password" maxlength="200" required>
+        </div>
+        <p class="form__error" id="new-error" role="alert" hidden></p>
+        <button class="order-btn" id="new-submit" type="submit">
+          <span class="spinner" aria-hidden="true" hidden></span>
+          <span data-t="newBtn"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- 3. already logged in on this phone -->
+    <section id="v-in" hidden>
+      <h1 class="member__title" data-t="inTitle"></h1>
+      <p class="member__intro" id="in-name"></p>
+      <a class="order-btn member__go" href="./" data-t="toMenu"></a>
+      <button class="text-btn" id="logout" type="button" data-t="logout"></button>
+    </section>
+  </main>
+</body>
+</html>

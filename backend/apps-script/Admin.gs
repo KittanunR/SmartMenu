@@ -75,7 +75,7 @@ function adminCreateShop(form) {
     const now = new Date();
     const temp = setTempPassword_(ss, id, f.phone, now);
     log_(ss, who, 'shop_created', id, f.name, now);
-    return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp };
+    return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp, login_url: SITE_URL + 'member.html' };
   });
 }
 
@@ -118,7 +118,7 @@ function adminIssuePassword(id) {
     const now = new Date();
     const temp = setTempPassword_(ss, id, phone, now);
     log_(ss, who, 'password_issued', id, '', now);
-    return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp };
+    return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp, login_url: SITE_URL + 'member.html' };
   });
 }
 

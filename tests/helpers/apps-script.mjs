@@ -120,11 +120,11 @@ function fakeDrive() {
 }
 
 /**
- * A fresh Apps Script world with Code.gs + Admin.gs + Bcrypt.gs loaded. Returns the context (call its functions
+ * A fresh Apps Script world with Code.gs + Admin.gs + Member.gs + Bcrypt.gs loaded. Returns the context (call its functions
  * directly), the fake spreadsheet, and post(body) which goes through doPost exactly like the site's fetch does.
  * `user` is who opened the web app ('' = not signed in, as on the public order deployment); `owner` runs the script.
  */
-export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
+export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Member.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
   const ss = new FakeSpreadsheet();
   const cache = new Map();
   const properties = new Map(Object.entries(props));
@@ -133,7 +133,7 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs'], user
   const ctx = createContext({
     console: { log() {}, error: console.error },
     SpreadsheetApp: { openById: () => ss, flush() {} },
-    CacheService: { getScriptCache: () => ({ get: k => (cache.has(k) ? cache.get(k) : null), put: (k, v) => { cache.set(k, String(v)); } }) },
+    CacheService: { getScriptCache: () => ({ get: k => (cache.has(k) ? cache.get(k) : null), put: (k, v) => { cache.set(k, String(v)); }, remove: k => { cache.delete(k); } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType() { return this; }, getContent: () => s }) },
     Session: {

@@ -31,6 +31,14 @@ Rules: phone = 9–10 digits starting 0; 1–40 items; qty > 0 and ≤ 500; unit
 Shop lookup (same endpoint, same text/plain POST): `{"contract":"order.v1","action":"shop","shop_code":"ABCDEFGH23"}` →
 `{"ok":true,"shop":{"name":"Café X","phone_masked":"xxx-xxx-5678","address_masked":"ซอยสุขุมวิท…"}}` or `{"ok":false,"error":"unknown_shop"|"rate"}` (≥60 wrong codes/hour site-wide pauses lookups). The full phone and address never leave the server.
 
+`session` (optional, added 2026-10-24, Phase 3): the shop's login token, 64 hex chars, from member.html (kept in the browser as localStorage `menu-member`). When present the server checks it (Sessions.Token_Hash = SHA-256 of the token, not revoked, not past Expires_At, account still active) and takes the shop from Master exactly like `shop_code`; a login wins over a `shop_code` in the same order. Dead or malformed token → `session` (final: the site forgets the login and the form asks for the shop's details again). Auth = "member".
+
+Shop login (same endpoint, same text/plain POST; Member.gs):
+- `{"action":"login","phone":"0812345678","password":"…"}` → `{"ok":true,"token":"<64 hex>","shop":{…}}`, or with a temporary password `{"ok":true,"must_change":true,"change_token":"<64 hex>"}` (15 min, once). Errors: `bad_login` (wrong phone or password, closed account — always the same), `locked` (5 wrong tries on that phone → 15 min), `rate` (≥100 failed logins/hour site-wide), `temp_expired` (right temp password, past 7 days).
+- `{"action":"set_password","change_token":"…","new_password":"…"}` → same as a login with `token`. Errors: `change_expired`, `password_short` (<8), `password_long` (>72 bytes), `password_phone`, `password_common`, `password_same`.
+- `{"action":"me","token":"…","logo_id":"<id the phone has>"}` → `{"ok":true,"shop":{"name","phone_masked","address_masked","logo_id"[,"logo_data_url"]}}` (the logo only when the phone does not have this one) or `{"ok":false,"error":"session"}`.
+- `{"action":"logout","token":"…"}` → `{"ok":true}` always.
+
 Response JSON: `{"ok":true,"order_id":"W261022-001"}` or `{"ok":false,"error":"<code>"}`.
 Error codes: `busy` (lock not free in 20 s) and `server` → the site retries. `rate` (≥5 orders/hour from one phone, or ≥40/hour from the whole site), `spam`, `too_big`, `bad_json`, and validation codes (`phone`, `items`, `total`, …) are final → the site shows the LINE fallback.
 
