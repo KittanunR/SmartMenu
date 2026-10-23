@@ -1,6 +1,6 @@
 /**
- * Shop login (Phase 3). The site (member.html / app.js) calls these through doPost with
- * { action: 'login' | 'set_password' | 'me' | 'logout', ... }; orders carry { session: token }.
+ * Shop login (Phase 3) and order History (Phase 4). The site (member.html / history.html / app.js) calls these through
+ * doPost with { action: 'login' | 'set_password' | 'me' | 'logout' | 'history', ... }; orders carry { session: token }.
  * - First login uses the temporary password from the admin page and must set the shop's own password.
  * - A session token is 32 random bytes (64 hex). Only its SHA-256 is stored (Sessions.Token_Hash).
  * - Same answer for a wrong phone and a wrong password; 5 wrong tries lock a phone for 15 min.
@@ -20,7 +20,12 @@ const DUMMY_HASH = '$2a$12$HQFAX./GkC1uj8/cE2UqyON/ovY/BEYSFGOhB08kdn8oH.he/VcKq
 const COMMON_PASSWORDS = ['password', 'password1', 'password123', '12345678', '123456789', '1234567890', '87654321',
   '11111111', '00000000', '12341234', 'qwertyui', 'qwerty123', 'iloveyou', 'abcd1234', 'abc12345', 'admin123',
   'welcome1', 'sukhumvit', 'betagro1', 'betagro123', 'smartmenu', 'bangkok1'];
-const MEMBER_ACTIONS = { login: true, set_password: true, me: true, logout: true };
+const MEMBER_ACTIONS = { login: true, set_password: true, me: true, logout: true, history: true };
+// History (decided 2026-10-24): only orders the shop itself placed (login or its own QR). A guest order is filed under a
+// shop by the typed phone alone, so anyone could put one there; those stay out.
+const HISTORY_DAYS = 90;
+const HISTORY_MAX = 50;
+const HISTORY_AUTH = { member: true, shop_qr: true };
 
 const failKeyAll_ = () => 'lf:all:' + Utilities.formatDate(new Date(), TZ, 'yyMMddHH');
 const hex_ = bytes => bytes.map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
@@ -34,6 +39,7 @@ function memberAction_(o) {
   if (o.action === 'login') return login_(o);
   if (o.action === 'set_password') return setPassword_(o);
   if (o.action === 'me') return me_(o);
+  if (o.action === 'history') return history_(o);
   return logout_(o);
 }
 
@@ -117,6 +123,46 @@ function me_(o) {
   if (!isDate_(seen) || Date.now() - seen.getTime() > LAST_SEEN_EVERY_MS) s.sessions.set(s.row, { Last_Seen: new Date() });
   return { ok: true, shop: memberProfile_(ss, s.id, typeof o.logo_id === 'string' ? o.logo_id : '') };
 }
+
+/**
+ * The logged-in shop's own web orders, newest first: when, delivery date, total, DIFOT status and the lines at the
+ * price paid. The shop comes from the session only. No phone, address or note is sent back.
+ */
+function history_(o) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const s = sessionOf_(ss, o.token);
+  if (!s) return { ok: false, error: 'session' };
+  const orders = table_(ss.getSheetByName('Order'));
+  const since = Date.now() - HISTORY_DAYS * DAY_MS;
+  const picked = [];
+  for (let r = 0; r < orders.rows.length; r++) {
+    if (orders.str(r, 'Customer_ID') !== s.id || HISTORY_AUTH[orders.str(r, 'Auth')] !== true) continue;
+    const at = orders.get(r, 'Order_Date');
+    if (isDate_(at) && at.getTime() >= since) picked.push({ r, at });
+  }
+  picked.sort((a, b) => b.at.getTime() - a.at.getTime());
+  const byId = {};
+  const out = picked.slice(0, HISTORY_MAX).map(({ r, at }) => {
+    const id = orders.str(r, 'Order_ID');
+    byId[id] = { id, ordered_at: iso_(at), delivery_date: dayText_(orders.get(r, 'Web_Delivery_Date')),
+      total: Number(orders.get(r, 'Web_Total')) || 0, status: orders.str(r, 'Status'), items: [] };
+    return byId[id];
+  });
+  if (out.length) {
+    const items = table_(ss.getSheetByName('Order_Items'));
+    for (let r = 0; r < items.rows.length; r++) {
+      const order = byId[items.str(r, 'Order_ID')];
+      if (!order) continue;
+      order.items.push({ sku: items.str(r, 'SKU'), name_th: items.str(r, 'Name_TH'), qty: Number(items.get(r, 'Qty')) || 0,
+        qty_unit: items.str(r, 'Qty_Unit'), unit_price: Number(items.get(r, 'Unit_Price')) || 0,
+        line_total: Number(items.get(r, 'Line_Total')) || 0 });
+    }
+  }
+  return { ok: true, days: HISTORY_DAYS, orders: out };
+}
+
+// Sheets turns a typed 2026-10-25 into a date; either way the site gets yyyy-MM-dd.
+const dayText_ = v => (isDate_(v) ? Utilities.formatDate(v, TZ, 'yyyy-MM-dd') : String(v == null ? '' : v).trim());
 
 function logout_(o) {
   const ss = SpreadsheetApp.openById(SHEET_ID);

@@ -118,6 +118,7 @@
       // shop login (member.html)
       memberLogin: 'เข้าสู่ระบบร้านค้า',
       memberLogout: 'ออกจากระบบ',
+      memberHistory: 'ประวัติการสั่งซื้อ',
       memberWins: (n) => `เครื่องนี้เข้าสู่ระบบเป็นร้าน ${n} อยู่ ถ้าจะใช้ QR ของร้านอื่น ให้ออกจากระบบก่อน`,
       memberExpired: 'หมดเวลาเข้าสู่ระบบของร้าน เข้าสู่ระบบอีกครั้งได้ที่ "เข้าสู่ระบบร้านค้า"',
       loggedOut: 'ออกจากระบบแล้ว',
@@ -226,6 +227,7 @@
       // shop login (member.html)
       memberLogin: 'Shop login',
       memberLogout: 'Log out',
+      memberHistory: 'Order history',
       memberWins: (n) => `This phone is logged in as ${n}. To use another shop's QR, log out first.`,
       memberExpired: 'Your shop login has ended. Log in again with "Shop login".',
       loggedOut: 'Logged out',
@@ -739,27 +741,40 @@
   function saveLastOrder(order) {
     storageSet('menu-last-order', JSON.stringify({ v: 1, items: order.items.map((i) => [i.sku, i.qty]) }));
   }
-  function lastOrderItems() {
+  function savedItems(key) {
     let saved = null;
-    try { saved = JSON.parse(storageGet('menu-last-order') || 'null'); } catch (_) { saved = null; }
+    try { saved = JSON.parse(storageGet(key) || 'null'); } catch (_) { saved = null; }
     const items = saved && Array.isArray(saved.items) ? saved.items : [];
-    return items.filter((it) => Array.isArray(it) && Number.isInteger(it[1]) && it[1] > 0).slice(0, MAX_LINES);
+    return items.filter((it) => Array.isArray(it) && typeof it[0] === 'string' && Number.isInteger(it[1]) && it[1] > 0).slice(0, MAX_LINES);
   }
+  const lastOrderItems = () => savedItems('menu-last-order');
   function renderReorder() {
     const btn = document.getElementById('reorder');
     const n = lastOrderItems().filter(([sku]) => sellable(sku)).length;
     btn.hidden = !(orderingOpen() && state.cart.size === 0 && n > 0);
     if (!btn.hidden) btn.textContent = TEXT[state.lang].reorder(n);
   }
-  function reorder() {
-    const items = lastOrderItems();
-    const ok = items.filter(([sku]) => sellable(sku));
-    ok.forEach(([sku, qty]) => state.cart.set(sku, Math.min(qty, MAX_QTY)));
+  // Puts [sku, qty] pairs in the cart (a product already there takes the new quantity); skipped = not sold
+  // this week, or the cart is full.
+  function reorder(items) {
+    const ok = [];
+    for (const [sku, qty] of items) {
+      if (!sellable(sku) || (!state.cart.has(sku) && state.cart.size >= MAX_LINES)) continue;
+      state.cart.set(sku, Math.min(qty, MAX_QTY));
+      ok.push([sku, qty]);
+    }
     saveCart();
     ok.forEach(([sku]) => syncSku(sku));
     renderDock();
     flash(TEXT[state.lang].reorderDone(ok.length, items.length - ok.length));
     document.getElementById('cart-cta').focus();
+  }
+  // "Order again" on history.html leaves the order's [sku, qty] pairs here for the menu to pick up once.
+  function reorderFromHistory() {
+    const items = savedItems('menu-reorder');
+    if (storageGet('menu-reorder')) storageSet('menu-reorder', '');
+    if (!items.length) return;
+    if (orderingOpen()) reorder(items); else flash(TEXT[state.lang].orderingOff);
   }
 
   // ---------- ordering: stepper ----------
@@ -1167,6 +1182,7 @@
     if (logoUrl) logo.src = logoUrl; else logo.removeAttribute('src');
     document.getElementById('member-account').hidden = member;
     document.getElementById('member-logout').hidden = !member;
+    document.getElementById('member-history').hidden = !member;
     document.getElementById('shop-forget').hidden = member;   // a login is undone with "log out", on the cover
     document.getElementById('form-shop').hidden = !s;
     document.getElementById('form-guest').hidden = Boolean(s);
@@ -1515,7 +1531,7 @@
       storageSet('menu-pending', '');
       closeCart();
     });
-    document.getElementById('reorder').addEventListener('click', reorder);
+    document.getElementById('reorder').addEventListener('click', () => reorder(lastOrderItems()));
     document.getElementById('member-logout').addEventListener('click', logoutMember);
     document.getElementById('shop-forget').addEventListener('click', () => {
       forgetShop();
@@ -1559,6 +1575,7 @@
     render();
     checkShop(fromScan);   // in the background: the menu never waits for it
     checkMember();
+    reorderFromHistory();
     if (fromScan && state.member) flash(TEXT[state.lang].memberWins(state.member.name));
   }
 

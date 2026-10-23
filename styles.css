@@ -587,3 +587,39 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
   .cover__initial { font-size: 56px; }
   .cover__member .cover__shop { font-size: var(--t28); }
 }
+
+/* ---------- order History (Phase 4): history.html ---------- */
+.history-page { max-width: 640px; padding-top: var(--s4); padding-bottom: var(--s6); }
+.history__status { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s5); color: var(--grey); font-size: var(--t14); }
+.spinner--dark { border-color: var(--line); border-top-color: var(--forest); }
+.history { list-style: none; margin: var(--s5) 0 0; padding: 0; display: grid; gap: var(--s3); }
+.hist { padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--white); }
+.hist__top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.hist__date { font-size: var(--t14); color: var(--grey); font-variant-numeric: tabular-nums; }
+.hist__sum { display: flex; align-items: baseline; gap: var(--s3); margin-top: var(--s2); }
+.hist__total { font: 600 var(--t24)/1.2 var(--display); color: var(--forest); font-variant-numeric: tabular-nums; }
+.hist__count { font-size: var(--t14); color: var(--ink); }
+.hist__meta { margin-top: 2px; font-size: var(--t12); color: var(--grey); }
+.pill { flex: none; padding: 2px 10px; border-radius: var(--r-pill); font: 500 var(--t12)/1.5 var(--text); white-space: nowrap; }
+.pill--wait, .pill--plain { background: var(--mint); color: var(--forest); }
+.pill--out { background: var(--leaf); color: var(--ink); }
+.pill--done { background: var(--forest); color: var(--white); }
+.pill--issue { border: 1px solid var(--alert); color: var(--alert); }   /* the shop must know something went wrong */
+.hist__details { margin-top: var(--s2); border-top: 1px solid var(--line); }
+.hist__toggle {
+  display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none;
+  color: var(--forest); font: 500 var(--t14)/1 var(--text);
+}
+.hist__toggle::-webkit-details-marker { display: none; }
+.hist__toggle::after { content: ""; width: 7px; height: 7px; margin-left: var(--s2); border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); transition: transform 150ms ease-out; }
+.hist__details[open] .hist__toggle::after { transform: translateY(1px) rotate(-135deg); }
+.hist__lines { list-style: none; margin: 0 0 var(--s2); padding: 0; }
+.hist__line { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: var(--s3); padding: var(--s2) 0; }
+.hist__line + .hist__line { border-top: 1px solid var(--line); }
+.hist__img { width: 44px; height: 44px; object-fit: cover; border-radius: var(--r-hair); background: var(--paper); }
+.hist__name { display: grid; min-width: 0; font-size: var(--t14); }
+.hist__each { color: var(--grey); font-size: var(--t12); font-variant-numeric: tabular-nums; }
+.hist__amount { font-size: var(--t14); font-weight: 500; font-variant-numeric: tabular-nums; }
+.hist__again { margin-top: var(--s2); }
+.history-page .member__help:empty { display: none; }
+.cover__links { display: flex; flex-wrap: wrap; column-gap: var(--s4); }

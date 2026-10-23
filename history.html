@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1A4A20">
+  <title>ประวัติการสั่งซื้อ · Betagro Shop</title>
+  <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=2026-10-24c">
+  <script src="history.js?v=2026-10-24c" defer></script>
+</head>
+<body class="member">
+  <!-- Order History (Phase 4): the logged-in shop's own web orders. Needs the session from member.html; see history.js. -->
+  <header class="cover cover--slim">
+    <div class="cover__top">
+      <p class="wordmark"><span class="wordmark__brand" lang="en">Betagro Shop</span><span class="wordmark__branch" id="shop-branch"></span></p>
+      <div class="lang" role="group" aria-label="Language / ภาษา">
+        <button type="button" data-lang="th" lang="th">ไทย</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page history-page">
+    <a class="back-btn" href="./">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>
+      <span data-t="backToMenu"></span>
+    </a>
+    <h1 class="member__title" data-t="title"></h1>
+    <p class="member__intro" id="h-sub"></p>
+
+    <p class="history__status" id="h-loading" role="status"><span class="spinner spinner--dark" aria-hidden="true"></span><span data-t="loading"></span></p>
+    <div class="notice" id="h-message" role="alert" hidden></div>
+    <a class="order-btn member__go" id="h-login" href="member.html" data-t="login" hidden></a>
+    <button class="text-btn" id="h-retry" type="button" data-t="retry" hidden></button>
+
+    <ol class="history" id="h-list" hidden></ol>
+    <p class="member__help" id="h-limit" data-t="limit" hidden></p>
+  </main>
+</body>
+</html>
