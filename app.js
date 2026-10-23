@@ -102,10 +102,20 @@
       backToMenu: 'กลับไปหน้าเมนู',
       doneSummary: (n, x, d) => `${n} รายการ · ฿${x} · รับของ ${d}`,
       orderingOff: 'การสั่งออนไลน์จะเปิดอีกครั้งเมื่อราคาสัปดาห์ใหม่ขึ้นระบบ ระหว่างนี้สั่งทาง LINE ได้เลย',
+      // shop QR
+      shopHello: (name) => `สั่งในนามร้าน ${name}`,
+      notMe: 'ไม่ใช่ร้านนี้?',
+      shopPhone: (p) => `โทร ${p}`,
+      shopAddress: (a) => `ส่งที่ ${a}`,
+      fAddressOther: 'ส่งที่อื่นครั้งนี้',
+      phAddressOther: 'เว้นว่างไว้ = ส่งที่อยู่ร้านเดิม',
+      shopGone: 'QR ร้านนี้ใช้ไม่ได้แล้ว กรอกข้อมูลร้านตอนสั่งได้เลย หรือขอ QR ใหม่จากพนักงานขาย',
+      privacy: 'ชื่อร้าน เบอร์โทร และที่อยู่ ใช้เพื่อจัดส่งและติดต่อเรื่องออเดอร์เท่านั้น',
       msg: {
         head: (id) => (id ? `ออเดอร์ ${id}` : 'ออเดอร์ใหม่จากเมนูออนไลน์'),
         shop: 'ร้าน', contact: 'ผู้ติดต่อ', phone: 'โทร', line: 'LINE', date: 'รับของ',
         address: 'ที่อยู่', note: 'หมายเหตุ', total: 'รวม', more: (n) => `…และอีก ${n} รายการ`,
+        viaQr: 'สั่งผ่าน QR ประจำร้าน',
       },
     },
     en: {
@@ -189,10 +199,20 @@
       backToMenu: 'Back to menu',
       doneSummary: (n, x, d) => `${n === 1 ? '1 item' : `${n} items`} · ฿${x} · delivery ${d}`,
       orderingOff: "Online ordering reopens when the new week's prices are posted. You can order on LINE meanwhile.",
+      // shop QR
+      shopHello: (name) => `Ordering as ${name}`,
+      notMe: 'Not your shop?',
+      shopPhone: (p) => `Phone ${p}`,
+      shopAddress: (a) => `Deliver to ${a}`,
+      fAddressOther: 'Deliver somewhere else this time',
+      phAddressOther: 'Leave empty to use your saved address',
+      shopGone: "This shop QR no longer works. Enter your shop details when you order, or ask your sales rep for a new QR.",
+      privacy: 'Your shop name, phone and address are used only to deliver and discuss your orders.',
       msg: {
         head: (id) => (id ? `Order ${id}` : 'New order from the online menu'),
         shop: 'Shop', contact: 'Contact', phone: 'Phone', line: 'LINE', date: 'Delivery',
         address: 'Address', note: 'Note', total: 'Total', more: (n) => `…and ${n} more items`,
+        viaQr: 'Ordered with shop QR',
       },
     },
   };
@@ -216,6 +236,7 @@
     last: null,       // { order, status: ok|pilot|fail, id, error, lineSent } for the done view
     busy: false,
     attempt: 0,       // which send attempt is running (1 = first), for the button label
+    shop: null,       // { code, name, phone_masked, address_masked } once the shop's own QR link is confirmed
   };
 
   // ---------- helpers ----------
@@ -345,6 +366,7 @@
     renderGrid(t);
     if (state.open) fillSheet(state.open);
     fillTexts(t);
+    renderShop();
     renderDock();
     if (isCartOpen()) renderCart();
   }
@@ -861,6 +883,7 @@
   function renderCart() {
     const t = TEXT[state.lang];
     fillTexts(t);
+    renderShop();
     const dlg = cartDlg();
     document.getElementById('cart-step-cart').hidden = state.step !== 'cart';
     document.getElementById('cart-form').hidden = state.step !== 'form';
@@ -964,6 +987,85 @@
     storageSet('menu-customer', JSON.stringify(out));
   }
 
+  // ---------- shop QR (a shop's own link: ...?shop=CODE) ----------
+  // The code is a private key to one shop record in the sheet. The site keeps it in this browser only,
+  // asks Apps Script which shop it is, and gets back the name plus a masked phone and address.
+  // The real details never come to the browser; the server fills them in when the order arrives.
+  const SHOP_CODE = /^[A-Z2-9]{10}$/;
+
+  // Read ?shop= once, remember it, and take it out of the address bar so it is not shared by accident.
+  function takeShopCodeFromUrl() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has('shop')) return false;
+    const code = String(params.get('shop') || '').trim().toUpperCase();
+    params.delete('shop');
+    const rest = params.toString();
+    history.replaceState(null, '', `${location.pathname}${rest ? `?${rest}` : ''}${location.hash}`);
+    if (!SHOP_CODE.test(code)) return false;
+    if (storageGet('menu-shop-code') !== code) storageSet('menu-shop', '');
+    storageSet('menu-shop-code', code);
+    return true;
+  }
+
+  function loadShop() {
+    const code = storageGet('menu-shop-code');
+    if (!code || !SHOP_CODE.test(code)) return;
+    let saved = null;
+    try { saved = JSON.parse(storageGet('menu-shop') || 'null'); } catch (_) { saved = null; }
+    if (saved && saved.code === code && typeof saved.name === 'string' && saved.name) state.shop = saved;
+  }
+
+  function forgetShop() {
+    state.shop = null;
+    storageSet('menu-shop-code', '');
+    storageSet('menu-shop', '');
+    renderShop();
+  }
+
+  // Confirms the remembered code with the server. Offline or slow: keep what was remembered last time.
+  async function checkShop(fromScan) {
+    const code = storageGet('menu-shop-code');
+    const url = String(state.config.order_endpoint || '').trim();
+    if (!code || !SHOP_CODE.test(code) || !url) return;
+    const res = await postOnce(url, { contract: 'order.v1', action: 'shop', shop_code: code }, 15000);
+    if (res.ok && res.shop && typeof res.shop.name === 'string' && res.shop.name) {
+      state.shop = {
+        code,
+        name: res.shop.name,
+        phone_masked: String(res.shop.phone_masked || ''),
+        address_masked: String(res.shop.address_masked || ''),
+      };
+      storageSet('menu-shop', JSON.stringify(state.shop));
+      renderShop();
+    } else if (res.error === 'unknown_shop') {
+      forgetShop();
+      if (fromScan) flash(TEXT[state.lang].shopGone);
+    }
+  }
+
+  function renderShop() {
+    const t = TEXT[state.lang];
+    const s = state.shop;
+    const hello = document.getElementById('shop-hello');
+    hello.hidden = !s;
+    hello.textContent = s ? t.shopHello(s.name) : '';
+    document.getElementById('form-shop').hidden = !s;
+    document.getElementById('form-guest').hidden = Boolean(s);
+    if (s) {
+      document.getElementById('shopcard-name').textContent = s.name;
+      const phone = document.getElementById('shopcard-phone');
+      phone.textContent = s.phone_masked ? t.shopPhone(s.phone_masked) : '';
+      phone.hidden = !s.phone_masked;
+      const addr = document.getElementById('shopcard-address');
+      addr.textContent = s.address_masked ? t.shopAddress(s.address_masked) : '';
+      addr.hidden = !s.address_masked;
+    }
+    // With a saved address the box is only for a one-off different place.
+    const other = Boolean(s && s.address_masked);
+    document.getElementById('f-address-label').textContent = other ? t.fAddressOther : t.fAddress;
+    document.getElementById('f-address').placeholder = other ? t.phAddressOther : t.phAddress;
+  }
+
   function setFieldError(id, msg) {
     const input = document.getElementById(id);
     const err = document.getElementById(`${id}-err`);
@@ -977,9 +1079,10 @@
     const t = TEXT[state.lang];
     const phone = digits(document.getElementById('f-phone').value);
     const date = document.getElementById('f-date').value;
+    const known = Boolean(state.shop);   // shop QR: name and phone come from the shop record
     const results = [
-      setFieldError('f-shop', clean(document.getElementById('f-shop').value, 80) ? '' : t.eShop),
-      setFieldError('f-phone', /^0\d{8,9}$/.test(phone) ? '' : t.ePhone),
+      setFieldError('f-shop', known || clean(document.getElementById('f-shop').value, 80) ? '' : t.eShop),
+      setFieldError('f-phone', known || /^0\d{8,9}$/.test(phone) ? '' : t.ePhone),
       setFieldError('f-date', /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= ymd(tomorrow()) ? '' : t.eDate),
     ];
     const firstBad = ['f-shop', 'f-phone', 'f-date'][results.indexOf(false)];
@@ -998,16 +1101,19 @@
       unit_price: l.unitPrice,
       line_total: l.lineTotal,
     }));
-    return {
+    const shop = state.shop;
+    const order = {
       contract: 'order.v1',
       shop_id: state.config.shop_id || '',
       price_week: state.prices.valid_from || state.prices.effective_date,
-      customer: {
-        shop_name: v('f-shop', 80),
-        contact_name: v('f-contact', 60),
-        phone: digits(document.getElementById('f-phone').value),
-        line_name: v('f-line', 40),
-      },
+      customer: shop
+        ? { shop_name: shop.name, contact_name: '', phone: '', line_name: '' }
+        : {
+          shop_name: v('f-shop', 80),
+          contact_name: v('f-contact', 60),
+          phone: digits(document.getElementById('f-phone').value),
+          line_name: v('f-line', 40),
+        },
       delivery: { date: document.getElementById('f-date').value, address_note: v('f-address', 200) },
       note: v('f-note', 200),
       items,
@@ -1016,6 +1122,8 @@
       client_ts: isoLocal(new Date()),
       hp: document.getElementById('f-hp').value,
     };
+    if (shop) order.shop_code = shop.code;
+    return order;
   }
 
   async function onSubmit(e) {
@@ -1038,7 +1146,7 @@
   // timed out may still have been written, so the server answers a repeated id with the first order_id
   // instead of writing it twice. Changing the cart or the form makes a new id.
   function orderKey(o) {
-    return JSON.stringify([o.price_week, o.customer, o.delivery, o.note, o.items.map((i) => [i.sku, i.qty])]);
+    return JSON.stringify([o.price_week, o.shop_code || '', o.customer, o.delivery, o.note, o.items.map((i) => [i.sku, i.qty])]);
   }
   function newId() {
     if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -1056,7 +1164,7 @@
 
   const sleep = (ms) => new Promise((r) => { setTimeout(r, ms); });
 
-  // One POST per docs/ORDER_CONTRACT.md → { ok, id } or { ok: false, error, retry }.
+  // One POST per docs/ORDER_CONTRACT.md → { ok, id, shop } or { ok: false, error, retry }.
   async function postOnce(url, order, timeoutMs) {
     const ctl = typeof AbortController === 'function' ? new AbortController() : null;
     const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : 0;
@@ -1069,8 +1177,8 @@
         signal: ctl ? ctl.signal : undefined,
       });
       const data = await res.json();
-      if (data && data.ok === true && typeof data.order_id === 'string' && data.order_id) {
-        return { ok: true, id: data.order_id };
+      if (data && data.ok === true) {
+        return { ok: true, id: typeof data.order_id === 'string' ? data.order_id : '', shop: data.shop };
       }
       const error = data && typeof data.error === 'string' ? data.error : 'server';
       return { ok: false, error, retry: RETRYABLE.has(error) };
@@ -1103,7 +1211,7 @@
       state.attempt = 0;
       setBusy(false);
     }
-    if (result.ok) {
+    if (result.ok && result.id) {
       state.last.status = 'ok';
       state.last.id = result.id;
       clearCart();
@@ -1111,7 +1219,9 @@
     } else {
       // The cart stays (here and in localStorage) until the order really went somewhere.
       state.last.status = 'fail';
-      state.last.error = result.error;
+      state.last.error = result.error || 'server';
+      // The shop's code was retired since the menu opened: next time the form asks for details again.
+      if (result.error === 'unknown_shop') forgetShop();
     }
     showStep('done');
   }
@@ -1173,8 +1283,9 @@
     const m = t.msg;
     const c = o.customer;
     const head = [m.head(id), `${m.shop}: ${c.shop_name}`];
+    if (o.shop_code) head.push(m.viaQr);   // the shop knows this customer; no phone in the browser
     if (c.contact_name) head.push(`${m.contact}: ${c.contact_name}`);
-    head.push(`${m.phone}: ${c.phone}`);
+    if (c.phone) head.push(`${m.phone}: ${c.phone}`);
     if (c.line_name) head.push(`${m.line}: ${c.line_name}`);
     head.push(`${m.date}: ${deliveryLabel(o.delivery.date, t)} (${o.delivery.date})`);
     const items = o.items.map((i) => `- ${i.name_th} x ${i.qty} ${t.unitLabel(i.qty_unit, i.qty)} = ฿${formatPrice(i.line_total, t)}`);
@@ -1234,6 +1345,8 @@
 
   // ---------- boot ----------
   async function boot() {
+    const fromScan = takeShopCodeFromUrl();
+    loadShop();
     document.querySelectorAll('.lang button').forEach((b) => {
       b.addEventListener('click', () => setLanguage(b.dataset.lang));
     });
@@ -1269,6 +1382,10 @@
       clearCart();
       storageSet('menu-pending', '');
       closeCart();
+    });
+    document.getElementById('shop-forget').addEventListener('click', () => {
+      forgetShop();
+      document.getElementById('f-shop').focus();
     });
     ['f-shop', 'f-phone', 'f-date'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => setFieldError(id, ''));
@@ -1306,6 +1423,7 @@
     }
 
     render();
+    checkShop(fromScan);   // in the background: the menu never waits for it
   }
 
   boot();

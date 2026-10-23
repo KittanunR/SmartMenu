@@ -26,9 +26,15 @@ Rules: phone = 9–10 digits starting 0; 1–40 items; qty > 0 and ≤ 500; unit
 
 `client_order_id` (optional, added 2026-10-23): 8–64 chars `[A-Za-z0-9-]`, made once per distinct order in the buyer's browser (`localStorage` `menu-pending`) and sent unchanged on every retry. The server answers a repeated id with the first order's id (`"duplicate":true`) and writes nothing. Changing the cart or the form makes a new id.
 
+`shop_code` (optional, added 2026-10-23): 10 chars `[A-HJKMNP-Z2-9]`, from the shop's own QR link `?shop=CODE`. When present, the server looks the shop up in Master (Type=Customer, Active, Shop_Code) and takes shop name, phone, contact and LINE name from there — the browser sends `customer.phone` empty. An empty `delivery.address_note` means "use the saved Address". Unknown or retired code → `unknown_shop` (final).
+
+Shop lookup (same endpoint, same text/plain POST): `{"contract":"order.v1","action":"shop","shop_code":"ABCDEFGH23"}` →
+`{"ok":true,"shop":{"name":"Café X","phone_masked":"xxx-xxx-5678","address_masked":"ซอยสุขุมวิท…"}}` or `{"ok":false,"error":"unknown_shop"|"rate"}` (≥60 wrong codes/hour site-wide pauses lookups). The full phone and address never leave the server.
+
 Response JSON: `{"ok":true,"order_id":"W261022-001"}` or `{"ok":false,"error":"<code>"}`.
 Error codes: `busy` (lock not free in 20 s) and `server` → the site retries. `rate` (≥5 orders/hour from one phone, or ≥40/hour from the whole site), `spam`, `too_big`, `bad_json`, and validation codes (`phone`, `items`, `total`, …) are final → the site shows the LINE fallback.
 
 Site behaviour: up to 3 attempts (pauses 2 s, 5 s; 30 s timeout each; 75 s in all). If none succeeds the cart stays, and the done view offers "Send order to LINE" + "Try again"; after tapping LINE it also offers "Sent on LINE? Clear the cart".
 
-Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty, Web_Client_ID), Order_Items +N rows (one write), Event +1 row (Station="Web", Action="Ordered"), Master +1 row (Type="Customer") if the phone is new.
+Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty, Web_Client_ID), Order_Items +N rows (one write), Event +1 row (Station="Web", Action="Ordered", Note ends ", shop QR" for QR orders), Master +1 row (Type="Customer", with Address / Contact_Name / LINE_Name) if the phone is new and no shop_code was sent.
+`makeShopCodes()` (run by hand) is the only thing that edits existing rows: it fills empty Master.Shop_Code / Shop_Link for active customers.

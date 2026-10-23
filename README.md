@@ -56,6 +56,18 @@ The sheet covers one week, Saturday to Friday (e.g. 17/10/2026 – 23/10/2026), 
 5. Ordering pauses on its own when this week's prices are out of date (same rule as the stale-price notice).
    ถ้าราคาหมดอายุ ระบบปิดการสั่งออนไลน์เองจนกว่าราคาสัปดาห์ใหม่จะขึ้น
 
+### Shop QR / QR ประจำร้าน
+
+Each regular customer (a row in the sheet's Master tab, Type = Customer) can get its own private QR.
+Scanning it opens the menu already in that shop's name: the checkout skips name and phone, shows them
+masked, and uses the saved address unless the buyer types another one for this order.
+ลูกค้าประจำแต่ละร้านได้ QR ของตัวเอง สแกนแล้วเมนูรู้ว่าเป็นร้านไหน ไม่ต้องกรอกชื่อ เบอร์ และที่อยู่ซ้ำ
+
+1. Add or check the customer in Master (Name, Phone, Address; Active = Yes).
+2. Apps Script editor → run `makeShopCodes` → new customers get `Shop_Code` + `Shop_Link`.
+3. Open `tools/shop-qr.html` on the site, paste the Master tab (Ctrl+A, Ctrl+C) → print cards, or download a picture to send in that shop's LINE chat.
+4. Code leaked or shop closed: clear its `Shop_Code`/`Shop_Link` (and run `makeShopCodes` for a new one) or set Active = No. The old QR stops working at once.
+
 **Order data never goes into this repo.** The cart and the buyer's details stay in the buyer's own browser
 (localStorage) until they submit; submitted orders go only to the Apps Script → the DIFOT sandbox Google Sheet.
 The repo is public: never commit orders, customer lists, phone numbers or the Apps Script secrets.
@@ -75,6 +87,7 @@ repo นี้เป็นสาธารณะ ห้าม commit ออเด
 | `scripts/validate.mjs` | Checks everything. Runs in CI on every push. |
 | `scripts/publish-prices.mjs` | Checks an extractor's JSON and publishes it. |
 | `scripts/make-qr.mjs` | Makes the QR code PNG. |
+| `tools/shop-qr.html` | Makes each shop's private QR (cards to print / PNG for LINE) in the browser; uploads nothing. QR library in `tools/vendor/`. |
 | `assets/products/` | Product photos `<SKU>.webp` (600 px square), cut from the Betagro catalogue PDF and matched by Thai name; `photo_match` in the catalog says exact / close / similar. Placeholder SVGs are for new SKUs only — an active, priced product without a real photo fails `npm run validate`. |
 
 ## Setup

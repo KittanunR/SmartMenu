@@ -9,8 +9,8 @@
   <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/prompt-latin-300.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2026-10-23c">
-  <script src="app.js?v=2026-10-23c" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2026-10-23d">
+  <script src="app.js?v=2026-10-23d" defer></script>
 </head>
 <body>
   <header class="cover">
@@ -26,6 +26,7 @@
       <span class="cover__date" id="asof-date"></span>
     </h1>
     <p class="cover__cadence" id="cadence"></p>
+    <p class="cover__shop" id="shop-hello" hidden></p>
   </header>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
@@ -130,6 +131,15 @@
         <h2 class="cart__title" id="form-title" data-t="formTitle"></h2>
         <p class="cart__week"><span id="form-count"></span> · <span data-t="total"></span> <strong class="cart__inline-total" id="form-sum"></strong></p>
 
+        <!-- Opened from the shop's own QR: details come from the shop record, shown only in part. -->
+        <div class="shopcard" id="form-shop" hidden>
+          <p class="shopcard__name" id="shopcard-name"></p>
+          <p class="shopcard__line" id="shopcard-phone"></p>
+          <p class="shopcard__line" id="shopcard-address"></p>
+          <button class="text-btn" id="shop-forget" type="button" data-t="notMe"></button>
+        </div>
+
+        <div id="form-guest">
         <div class="field">
           <label for="f-shop"><span data-t="fShop"></span> <span class="field__req" aria-hidden="true">*</span></label>
           <input id="f-shop" name="shop_name" type="text" autocomplete="organization" maxlength="80" required aria-describedby="f-shop-err" data-t-ph="phShop">
@@ -151,19 +161,21 @@
             <input id="f-line" name="line_name" type="text" autocomplete="off" maxlength="40">
           </div>
         </div>
+        </div>
         <div class="field">
           <label for="f-date"><span data-t="fDate"></span> <span class="field__req" aria-hidden="true">*</span></label>
           <input id="f-date" name="delivery_date" type="date" required aria-describedby="f-date-err">
           <p class="field__err" id="f-date-err" hidden></p>
         </div>
         <div class="field">
-          <label for="f-address"><span data-t="fAddress"></span></label>
+          <label for="f-address"><span id="f-address-label" data-t="fAddress"></span></label>
           <textarea id="f-address" name="address_note" rows="2" maxlength="200" autocomplete="street-address" data-t-ph="phAddress"></textarea>
         </div>
         <div class="field">
           <label for="f-note"><span data-t="fNote"></span></label>
           <textarea id="f-note" name="note" rows="2" maxlength="200"></textarea>
         </div>
+        <p class="field__hint form__privacy" data-t="privacy"></p>
         <!-- Honeypot: people never see or fill this; bots that fill every field do. -->
         <div class="hp" aria-hidden="true">
           <label for="f-hp">Leave this empty</label>

@@ -97,6 +97,7 @@ img { display: block; max-width: 100%; }
   font-variant-numeric: tabular-nums;
 }
 .cover__cadence { margin-top: var(--s2); font-size: var(--t14); color: var(--mint); }
+.cover__shop { margin-top: var(--s3); font: 500 var(--t16)/1.4 var(--text); color: var(--white); }
 
 /* ---------- category tabs (sticky) ---------- */
 .tabs {
@@ -467,6 +468,11 @@ img { display: block; max-width: 100%; }
 .field__err, .form__error { margin-top: var(--s1); font-size: var(--t14); color: var(--alert); }
 .form__error { margin-top: var(--s4); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s3); }
+.shopcard { margin-top: var(--s4); padding: var(--s3) var(--s4) var(--s1); background: var(--mint); border-radius: var(--r-hair); }
+.shopcard__name { font: 600 var(--t16)/1.4 var(--text); color: var(--forest); }
+.shopcard__line { margin-top: 2px; font-size: var(--t14); color: var(--ink); }
+.shopcard .text-btn { margin-top: var(--s1); padding: 0; }
+.form__privacy { margin-top: var(--s4); }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .order-btn:disabled { opacity: .45; cursor: default; }
 button.order-btn, .send-line { width: 100%; border: 0; cursor: pointer; }
