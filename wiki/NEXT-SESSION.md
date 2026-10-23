@@ -1,12 +1,28 @@
-# Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-23 evening)
+# Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-23 night)
 
-## Latest (2026-10-23 evening) — read first
-- LIVE: CI gate (validate → deploy, Pages Source = GitHub Actions, commit 02d6bc7).
-- LOCAL, NOT PUSHED: reorder button (app.js/styles.css?v=2026-10-23e) + prices carried over to 24–30 Oct (data/prices/2026-10-24.json) + wiki notes. Push = one commit "Reorder button + carry prices over to 24–30 Oct" → check Actions ✓ → live site shows 24–30 ต.ค.
-- Node 24 LTS installed on this PC → `npm run validate` works (open a new terminal).
-- Next ideas (Petch picks): full PDPA notice (needs Petch's wording), PWA install, clean sandbox test data (W261023-007, test customers), server-side reorder by shop code only if shops ask. Next price publish due Fri 30/10.
+## Latest (2026-10-23 night) — read first: Member accounts project
+Petch is building optional shop accounts (Guest vs Member). Full spec, decisions and dated log: **[member-accounts.md](member-accounts.md)** — read it before touching code. Work one phase at a time; end each phase with "what changed + how to test"; Petch does every Apps Script / AppSheet / GitHub click himself.
 
-Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ". Open in Claude Code inside `Documents\Smart menu\SmartMenu` if building the DIFOT board (option 1 below).
+**Status**
+| Phase | What | State |
+|---|---|---|
+| 0 | bcrypt speed in Apps Script | DONE — cost 12 (check ~0.47 s). `Bcrypt.gs` in the Apps Script project. |
+| 1 | Data model + test harness | LIVE — Apps Script Version 5 (same /exec), setup() + backfillCategories() ran, commit 9b57f52, Actions #13 ✓. Live order W261023-008: Auth = guest, Category = pork. |
+| fix | Order "not sent" although it arrived | LOCAL, NOT PUSHED — app.js / index.html (`?v=2026-10-23f`), see ordering.md 2026-10-23 (after Phase 1). Petch to push, then test on real phones (Chrome/Safari/LINE in-app; airplane mode → new "may already be in" text + "อ้างอิง:" line in the LINE message; retry → 1 row only). Cause still unknown (seen only in the Claude desktop browser). Optional: put "Try again" above the LINE button. |
+| 2 | Admin page | NEXT — after Petch reports the fix test |
+| 3–5 | Login + branding → History → Analytics | later |
+
+**Decided (don't re-ask):** guest keeps ordering as today · Shop QR = ordering only, never History · login = phone + password · admin creates shop → random temp password shown once (bcrypt hash only, 7 days) → forced change at first login · forgot = admin presses reset (old password + all sessions die) · no invite QR in v1 · Admin = web page (Claude's plan: Apps Script HtmlService, Google-account protected, not on Pages).
+
+**Phase 2 first step:** check whether a consumer-Gmail Apps Script web app can allow several staff emails (Session.getActiveUser() may be empty outside Workspace); if not, all staff use btgs.sukhumvit ("Only myself"). Then: list/create shop (name, phone, contact, address, logo → Drive), issue/reset temp password, disable — never show Password_Hash. Load the web-security-checklist skill. TDD with `npm test` (tests/helpers/apps-script.mjs fakes the sheet).
+
+**Rules:** Member_Auth / Sessions tabs must never be added to AppSheet · no customer data or logos in this public repo · "shop_id" in config = SU22 (Betagro branch); a customer is Master.Code (Customer_ID) · bump `?v=` on every app.js/styles.css change · `npm test` + `npm run validate` before every push (CI runs both).
+
+Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ" in Claude Code opened in `Documents\Smart menu\SmartMenu`.
+
+## Earlier (2026-10-23 evening)
+- LIVE since: CI gate (02d6bc7), reorder button + 24–30 Oct prices (fc43524). Next price publish due Fri 30/10.
+- Next ideas (Petch picks): full PDPA notice (needs Petch's wording), PWA install, clean sandbox test data (W261023-007, -008, test customers), server-side reorder by shop code only if shops ask.
 
 ## Done (2026-10-22/23)
 - Live site https://kittanunr.github.io/SmartMenu/ has cart + checkout; orders POST to Apps Script v2 (`config.json` order_endpoint) → sandbox sheet "Event" (id 1e8x…ISAg): Order / Order_Items / Event / Master. E2E tested. See ordering.md.

@@ -95,6 +95,7 @@
       pilotBody: 'กดปุ่มด้านล่างเพื่อส่งออเดอร์เข้า LINE ร้าน ร้านจะยืนยันยอดและเวลาส่งในแชต',
       failTitle: 'ส่งออเดอร์เข้าระบบยังไม่สำเร็จ',
       failBody: 'ไม่ต้องกังวล ตะกร้ายังอยู่ครบ กดส่งสรุปออเดอร์ทาง LINE ได้เลย หรือลองส่งอีกครั้ง',
+      failMaybe: 'ออเดอร์อาจเข้าระบบแล้ว กด "ลองส่งอีกครั้ง" ก่อน ไม่ทำให้ออเดอร์ซ้ำ ถ้ายังไม่สำเร็จค่อยส่งสรุปทาง LINE ตะกร้ายังอยู่ครบ',
       failRate: 'ชั่วโมงนี้มีออเดอร์จากเบอร์นี้หลายครั้งแล้ว กดส่งสรุปออเดอร์ทาง LINE แทนได้เลย ร้านจะติดต่อกลับ',
       retry: 'ลองส่งอีกครั้ง',
       sendLine: 'ส่งสรุปออเดอร์เข้า LINE',
@@ -117,7 +118,7 @@
         head: (id) => (id ? `ออเดอร์ ${id}` : 'ออเดอร์ใหม่จากเมนูออนไลน์'),
         shop: 'ร้าน', contact: 'ผู้ติดต่อ', phone: 'โทร', line: 'LINE', date: 'รับของ',
         address: 'ที่อยู่', note: 'หมายเหตุ', total: 'รวม', more: (n) => `…และอีก ${n} รายการ`,
-        viaQr: 'สั่งผ่าน QR ประจำร้าน',
+        viaQr: 'สั่งผ่าน QR ประจำร้าน', ref: 'อ้างอิง',
       },
     },
     en: {
@@ -194,6 +195,7 @@
       pilotBody: 'Tap below to send your order to our LINE. The shop confirms the total and delivery time in the chat.',
       failTitle: "Your order didn't reach us yet",
       failBody: 'No problem, your cart is still here: send the order summary on LINE instead, or try again.',
+      failMaybe: 'Your order may already have reached us. Tap "Try again" first: it never makes a second order. If it still fails, send the summary on LINE. Your cart is still here.',
       failRate: 'We already have several orders from this phone in the last hour. Send the summary on LINE instead and the shop will get back to you.',
       retry: 'Try again',
       sendLine: 'Send order to LINE',
@@ -216,7 +218,7 @@
         head: (id) => (id ? `Order ${id}` : 'New order from the online menu'),
         shop: 'Shop', contact: 'Contact', phone: 'Phone', line: 'LINE', date: 'Delivery',
         address: 'Address', note: 'Note', total: 'Total', more: (n) => `…and ${n} more items`,
-        viaQr: 'Ordered with shop QR',
+        viaQr: 'Ordered with shop QR', ref: 'Ref',
       },
     },
   };
@@ -1240,6 +1242,8 @@
         state.attempt = attempt;
         setBusy(true);
         result = await postOnce(url, state.last.order, Math.max(5000, Math.min(SUBMIT_TIMEOUT_MS, deadline - Date.now())));
+        // ok without an order number (e.g. a doGet answer) does not prove the order was written: ask again.
+        if (result.ok && !result.id) result = { ok: false, error: 'server', retry: true };
         const wait = RETRY_DELAYS_MS[attempt - 1];
         if (result.ok || !result.retry || wait == null || Date.now() + wait + 5000 > deadline) break;
         await sleep(wait);
@@ -1297,7 +1301,8 @@
     if (!last) return;
     const o = last.order;
     const title = { ok: t.okTitle, pilot: t.pilotTitle, fail: t.failTitle }[last.status] || t.pilotTitle;
-    const failBody = last.error === 'rate' ? t.failRate : t.failBody;
+    // network / busy / server: the order may have been written before the answer got lost, so retry before LINE.
+    const failBody = last.error === 'rate' ? t.failRate : RETRYABLE.has(last.error) ? t.failMaybe : t.failBody;
     const body = { ok: t.okBody, pilot: t.pilotBody, fail: failBody }[last.status] || t.pilotBody;
     document.getElementById('cart-done').dataset.status = last.status;
     document.getElementById('done-title').textContent = title;
@@ -1322,6 +1327,8 @@
     const c = o.customer;
     const head = [m.head(id), `${m.shop}: ${c.shop_name}`];
     if (o.shop_code) head.push(m.viaQr);   // the shop knows this customer; no phone in the browser
+    // No order number yet: the start of Web_Client_ID lets staff find it in the sheet if it did arrive.
+    if (!id && o.client_order_id) head.push(`${m.ref}: ${String(o.client_order_id).slice(0, 8)}`);
     if (c.contact_name) head.push(`${m.contact}: ${c.contact_name}`);
     if (c.phone) head.push(`${m.phone}: ${c.phone}`);
     if (c.line_name) head.push(`${m.line}: ${c.line_name}`);
