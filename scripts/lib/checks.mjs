@@ -5,6 +5,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 import { checkSchema } from './schema-check.mjs';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -24,7 +25,8 @@ const pricesSchema = JSON.parse(readFileSync(join(ROOT, 'schema', 'prices.schema
 
 export function readJson(path) {
   try {
-    return { data: JSON.parse(readFileSync(path, 'utf8')) };
+    // Strip a UTF-8 BOM (Notepad/PowerShell add one); browsers ignore it, JSON.parse does not.
+    return { data: JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')) };
   } catch (e) {
     return { error: `${path}: ${e.code === 'ENOENT' ? 'file not found' : e.message}` };
   }
@@ -270,6 +272,51 @@ export function checkRepo() {
   if (latest.error) errors.push(`${latest.error} (run scripts/publish-prices.mjs)`);
   else if (JSON.stringify(latest.data) !== JSON.stringify(readJson(newest.path).data)) {
     errors.push(`data/prices/latest.json is not a copy of ${basename(newest.path)} — never edit latest.json by hand, run scripts/publish-prices.mjs`);
+  }
+  merge(checkSite());
+  return { errors, warnings };
+}
+
+const PAGES = ['index.html', 'tools/shop-qr.html'];
+const SCRIPTS = ['app.js', 'backend/apps-script/Code.gs'];
+const CONFIG_STRINGS = ['shop_name_th', 'shop_name_en', 'line_oa_url', 'line_oa_id', 'shop_id'];
+const ENDPOINT = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
+
+/** The site itself: config.json, files the pages load, and that the scripts parse. Never runs them. */
+export function checkSite() {
+  const errors = [];
+  const warnings = [];
+
+  const cfg = readJson(join(ROOT, 'config.json'));
+  if (cfg.error) errors.push(cfg.error);
+  else {
+    for (const k of CONFIG_STRINGS) {
+      if (typeof cfg.data[k] !== 'string' || !cfg.data[k].trim()) errors.push(`config.json: "${k}" is missing or empty`);
+    }
+    if (!(cfg.data.stale_after_days > 0)) errors.push('config.json: "stale_after_days" must be a number above 0');
+    if (cfg.data.order_endpoint === undefined) warnings.push('config.json: no "order_endpoint" — the site will only offer ordering through LINE');
+    else if (!ENDPOINT.test(String(cfg.data.order_endpoint))) errors.push('config.json: "order_endpoint" is not an Apps Script https://script.google.com/macros/s/…/exec URL');
+  }
+
+  for (const page of PAGES) {
+    const path = join(ROOT, page);
+    if (!existsSync(path)) { errors.push(`${page}: file not found`); continue; }
+    const html = readFileSync(path, 'utf8');
+    for (const [, ref] of html.matchAll(/\b(?:src|href)="([^"]*)"/g)) {
+      if (!ref || /^(#|data:|https?:|mailto:|tel:)/.test(ref)) continue;
+      const file = ref.split(/[?#]/)[0];
+      if (!existsSync(join(dirname(path), file))) errors.push(`${page}: loads "${ref}" but ${file} does not exist`);
+    }
+  }
+
+  for (const file of SCRIPTS) {
+    const path = join(ROOT, file);
+    if (!existsSync(path)) { errors.push(`${file}: file not found`); continue; }
+    try {
+      new Script(readFileSync(path, 'utf8'), { filename: file });
+    } catch (e) {
+      errors.push(`${file}: ${e.message} — the file would not run`);
+    }
   }
   return { errors, warnings };
 }

@@ -1,7 +1,13 @@
-name: validate
+name: validate and deploy
+# Every push is validated. A push to main goes live on GitHub Pages ONLY if validation passes,
+# so a broken latest.json / config.json / app.js never replaces the working site.
+# Needs: Settings → Pages → Build and deployment → Source = "GitHub Actions" (not "Deploy from a branch").
 on:
   push:
   pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -12,3 +18,26 @@ jobs:
           node-version: 22
       # validate.mjs uses Node built-ins only, so no npm install is needed.
       - run: node scripts/validate.mjs
+
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      # Same files as the old "deploy from branch" (the whole repo; .git and .github are left out).
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

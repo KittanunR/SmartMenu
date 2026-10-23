@@ -28,8 +28,8 @@ The sheet covers one week, Saturday to Friday (e.g. 17/10/2026 – 23/10/2026), 
    Read every `WARN` line (big price jumps, prices that rise with quantity, outliers, duplicate SAP codes, missing items). If it says `Rejected`, nothing changed; fix and rerun.
    อ่านทุกบรรทัด `WARN` (ราคาขึ้นลงมาก สินค้าขาด) ถ้าขึ้นว่า `Rejected` แปลว่ายังไม่มีอะไรเปลี่ยน ให้แก้แล้วรันใหม่
 4. **Go live / ขึ้นเว็บ** — `git add data/prices && git commit -m "prices 2026-10-24" && git push`.
-   GitHub Pages updates in about a minute. The QR code never changes.
-   หน้าเว็บอัปเดตภายในประมาณ 1 นาที QR เดิมใช้ได้ตลอด
+   GitHub Pages updates in about 1–2 minutes, only if CI validation passes (red ✗ on the commit = site not changed). The QR code never changes.
+   หน้าเว็บอัปเดตภายใน 1–2 นาที เฉพาะเมื่อ CI ตรวจผ่าน (ถ้าขึ้น ✗ สีแดง = เว็บยังเป็นของเดิม) QR เดิมใช้ได้ตลอด
 
 `publish-prices.mjs` is the only way prices get into the site. Never edit `data/prices/*.json` by hand.
 ราคาเข้าเว็บได้ทางเดียวคือ `publish-prices.mjs` ห้ามแก้ไฟล์ราคาด้วยมือ
@@ -84,7 +84,7 @@ repo นี้เป็นสาธารณะ ห้าม commit ออเด
 | `data/prices/YYYY-MM-DD.json` | One file per price week (history), named by `valid_from`. Each product has quantity tiers. |
 | `data/prices/latest.json` | Copy of the newest week. The page reads this. |
 | `schema/` | JSON Schemas for catalog and prices. |
-| `scripts/validate.mjs` | Checks everything. Runs in CI on every push. |
+| `scripts/validate.mjs` | Checks everything (data, config.json, files the pages load, that app.js / Code.gs parse). Runs in CI on every push; a push to `main` deploys only if it passes. |
 | `scripts/publish-prices.mjs` | Checks an extractor's JSON and publishes it. |
 | `scripts/make-qr.mjs` | Makes the QR code PNG. |
 | `tools/shop-qr.html` | Makes each shop's private QR (cards to print / PNG for LINE) in the browser; uploads nothing. QR library in `tools/vendor/`. |
@@ -98,8 +98,9 @@ npm run validate            # check data
 npm run serve               # open http://localhost:8000
 ```
 
-**GitHub Pages:** Settings → Pages → Deploy from branch → `main` / root. Works under
-`https://<user>.github.io/<repo>/` because all paths are relative.
+**GitHub Pages:** Settings → Pages → Build and deployment → Source = **GitHub Actions**.
+`.github/workflows/validate.yml` validates, then deploys `main` (whole repo, as before). A failing
+check keeps the old site live. Works under `https://<user>.github.io/<repo>/` because all paths are relative.
 
 **QR code:** `node scripts/make-qr.mjs https://<user>.github.io/<repo>/ docs/qr/menu-qr.png`
 Add `?lang=en` to the URL for a QR that always opens in English. Otherwise the page follows the phone's language.

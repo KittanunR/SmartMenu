@@ -9,7 +9,7 @@ Scope: SmartMenu website only (not AppSheet/DIFOT) — Petch, 2026-10-23.
 1. Google account btgs.sukhumvit — the web app runs as it; revoked auth / suspended → ordering stops (menu still loads).
 2. Sandbox sheet tab/column names — code writes by header name; renaming Order/Order_Items/Master/Event or their columns breaks orders.
 3. Weekly price publish — ordering pauses after latest.json valid_to.
-4. Broken push (latest.json / app.js / config.json) → site breaks; CI validate warns but does not block Pages deploy.
+4. Broken push (latest.json / app.js / config.json) → site breaks; CI validate warns but does not block Pages deploy. **2026-10-23 evening: fix written (local, NOT pushed):** validate.yml now validates then deploys `main` only if it passes; validate also checks config.json, files index.html / shop-qr.html load, and that app.js / Code.gs parse. Goes live only after Petch pushes AND switches Settings → Pages → Source to "GitHub Actions". Checks tested in the browser pane, then with real Node (installed 2026-10-23 evening): repo passes, a broken copy fails.
 5. Public order endpoint — honeypot only, no rate limit → spam orders possible. **2026-10-23: rate limits (5/h per phone, 40/h site), size + total checks added in Code.gs (not deployed yet).** A determined attacker can still rotate phone numbers; the 40/h cap limits the damage.
 6. Knowledge sits with Petch (+ wiki).
 - 2026-10-23: endpoint failure handled — site retries 3× with the same client_order_id (server de-duplicates), keeps the cart, offers LINE. Lock timeout now returns `busy` instead of an error page.
