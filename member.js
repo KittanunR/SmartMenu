@@ -1,5 +1,5 @@
-// Shop login page (Phase 3): phone + password → a session token kept in this browser (localStorage
-// 'menu-member'), which app.js sends with orders. The first login uses the temporary password from the admin
+// Shop login page (Phase 3): phone + password → a session token kept in this browser ('menu-member': localStorage
+// when 'remember me' is ticked, else sessionStorage = this tab only), which app.js sends with orders. The first login uses the temporary password from the admin
 // page and must set the shop's own password. Talks only to the order endpoint in config.json (Member.gs).
 // Everything shown is set with textContent.
 'use strict';
@@ -18,6 +18,8 @@
       show: 'แสดง',
       hide: 'ซ่อน',
       tempHint: 'เข้าครั้งแรก ใช้รหัสชั่วคราวที่ได้จากร้าน (เช่น ABCDE-FGHJK)',
+      remember: 'จดจำการเข้าสู่ระบบในเครื่องนี้',
+      rememberHint: 'ไม่ต้องเข้าระบบใหม่ 90 วัน ถ้าใช้เครื่องร่วมกับคนอื่น ไม่ต้องติ๊ก',
       loginBtn: 'เข้าสู่ระบบ',
       forgot: 'ลืมรหัสผ่าน หรือยังไม่มีบัญชี? ทักร้านทาง LINE ร้านจะส่งรหัสชั่วคราวให้ใหม่',
       askLine: 'ทักร้านทาง LINE',
@@ -28,9 +30,11 @@
       rules: 'อย่างน้อย 8 ตัวอักษร ใช้ภาษาไทยหรือเว้นวรรคได้ ห้ามใช้เบอร์โทร และห้ามใช้รหัสที่เดาง่าย เช่น 12345678',
       newBtn: 'บันทึกรหัสผ่านและเข้าสู่ระบบ',
       inTitle: 'เข้าสู่ระบบแล้ว',
-      inName: (n) => `ร้าน ${n}`,
+      inName: (n) => n,
       toMenu: 'ไปหน้าเมนู',
       logout: 'ออกจากระบบ',
+      logoutAsk: 'ออกจากระบบร้านจากเครื่องนี้? ครั้งหน้าต้องใส่เบอร์และรหัสผ่านใหม่',
+      cancel: 'ยกเลิก',
       loggedOut: 'ออกจากระบบแล้ว',
       busyLogin: 'กำลังเข้าสู่ระบบ…',
       busySave: 'กำลังบันทึก…',
@@ -62,6 +66,8 @@
       show: 'Show',
       hide: 'Hide',
       tempHint: 'First time? Use the temporary password the shop gave you (e.g. ABCDE-FGHJK).',
+      remember: 'Keep me logged in on this phone',
+      rememberHint: "Stay logged in for 90 days. Untick on a phone you share.",
       loginBtn: 'Log in',
       forgot: "Forgot your password, or no account yet? Message us on LINE and we'll send a new temporary password.",
       askLine: 'Message us on LINE',
@@ -75,6 +81,8 @@
       inName: (n) => n,
       toMenu: 'Go to the menu',
       logout: 'Log out',
+      logoutAsk: 'Log your shop out on this phone? You will need your phone number and password next time.',
+      cancel: 'Cancel',
       loggedOut: 'Logged out',
       busyLogin: 'Logging in…',
       busySave: 'Saving…',
@@ -99,11 +107,14 @@
     },
   };
 
-  const state = { lang: pickLanguage(), config: {}, view: 'login', change: '', phone: '', busy: false, error: {} };
+  const state = { lang: pickLanguage(), config: {}, view: 'login', change: '', phone: '', remember: true, busy: false, error: {} };
   const $ = (id) => document.getElementById(id);
 
   function storageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
   function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* private mode */ } }
+  function tabGet(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } }
+  function tabSet(k, v) { try { sessionStorage.setItem(k, v); } catch (_) { /* private mode */ } }
+  function forgetMember() { storageSet(STORE, ''); tabSet(STORE, ''); }
 
   function pickLanguage() {
     const q = new URLSearchParams(location.search).get('lang');
@@ -116,13 +127,15 @@
 
   function loadMember() {
     let m = null;
-    try { m = JSON.parse(storageGet(STORE) || 'null'); } catch (_) { m = null; }
+    try { m = JSON.parse(storageGet(STORE) || tabGet(STORE) || 'null'); } catch (_) { m = null; }
     return m && /^[0-9a-f]{64}$/.test(m.token || '') && typeof m.name === 'string' ? m : null;
   }
 
   function saveMember(res) {
     const s = res.shop || {};
-    storageSet(STORE, JSON.stringify({
+    forgetMember();
+    (state.remember ? storageSet : tabSet)(STORE, JSON.stringify({
+      keep: state.remember,
       token: res.token,
       name: String(s.name || ''),
       phone_masked: String(s.phone_masked || ''),
@@ -225,7 +238,8 @@
     if (!/^0\d{8,9}$/.test(phone)) { state.error.login = 'phone'; render(); $('l-phone').focus(); return; }
     if (!password) { state.error.login = 'password'; render(); $('l-password').focus(); return; }
     setBusy(true);
-    const res = await post({ action: 'login', phone, password });
+    state.remember = $('l-remember').checked;
+    const res = await post({ action: 'login', phone, password, remember: state.remember });
     state.busy = false;
     if (res.ok && res.must_change && /^[0-9a-f]{64}$/.test(res.change_token || '')) {
       state.change = res.change_token;
@@ -250,7 +264,7 @@
     if (Array.from(pw).length < 8) { state.error.new = 'password_short'; render(); $('n-password').focus(); return; }
     if (pw !== $('n-confirm').value) { state.error.new = 'mismatch'; render(); $('n-confirm').focus(); return; }
     setBusy(true);
-    const res = await post({ action: 'set_password', change_token: state.change, new_password: pw });
+    const res = await post({ action: 'set_password', change_token: state.change, new_password: pw, remember: state.remember });
     state.busy = false;
     if (res.ok && res.token) {
       saveMember(res);
@@ -268,7 +282,8 @@
 
   async function logout() {
     const m = loadMember();
-    storageSet(STORE, '');
+    forgetMember();
+    $('logout-confirm').hidden = true;
     go('login');
     if (m) post({ action: 'logout', token: m.token });   // the phone forgets it at once; the server is told in the background
   }
@@ -287,7 +302,10 @@
     }));
     $('login-form').addEventListener('submit', onLogin);
     $('new-form').addEventListener('submit', onNewPassword);
-    $('logout').addEventListener('click', logout);
+    // Logging out needs a second tap (2026-10-24): the button is easy to hit by mistake.
+    $('logout').addEventListener('click', () => { $('logout').hidden = true; $('logout-confirm').hidden = false; $('logout-no').focus(); });
+    $('logout-no').addEventListener('click', () => { $('logout-confirm').hidden = true; $('logout').hidden = false; $('logout').focus(); });
+    $('logout-yes').addEventListener('click', () => { $('logout').hidden = false; logout(); });
     state.view = loadMember() ? 'in' : 'login';
     render();
     state.config = await getConfig();

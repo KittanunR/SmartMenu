@@ -623,3 +623,49 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
 .hist__again { margin-top: var(--s2); }
 .history-page .member__help:empty { display: none; }
 .cover__links { display: flex; flex-wrap: wrap; column-gap: var(--s4); }
+
+/* ---------- remember me + logout confirm (2026-10-24) ---------- */
+.check { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s4); cursor: pointer; font-size: var(--t14); }
+.check input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--forest); cursor: pointer; }
+.check > span { display: grid; gap: 2px; }
+.check__hint { color: var(--grey); font-size: var(--t12); }
+.confirm { margin-top: var(--s3); padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); }
+.confirm__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s4); margin-top: var(--s3); }
+.confirm .text-btn { margin: 0; padding: 0; }
+.confirm__yes {
+  min-height: 44px; padding: 0 var(--s5); border: 0; border-radius: var(--r-pill); cursor: pointer;
+  background: var(--forest); color: var(--white); font: 500 var(--t14)/1 var(--text);
+}
+.confirm__yes--light { background: var(--white); color: var(--forest); }
+.cover__confirm { margin-top: var(--s2); font-size: var(--t14); color: var(--white); }
+.cover__confirm .confirm__row { margin-top: var(--s2); }
+
+/* ---------- analytics on history.html (Phase 5): one series, so one colour (forest) and no legend ---------- */
+.stats { margin-top: var(--s5); padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--paper); }
+.stats__title { font: 600 var(--t20)/1.3 var(--display); color: var(--forest); }
+.stats__sub { margin: var(--s5) 0 var(--s2); font: 500 var(--t14)/1.4 var(--text); color: var(--ink); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); margin-top: var(--s3); }
+.kpi { display: grid; gap: 2px; padding: var(--s3); border-radius: var(--s2); background: var(--white); min-width: 0; }
+.kpi__label { font-size: var(--t12); color: var(--grey); }
+.kpi__value { font: 600 var(--t20)/1.2 var(--display); color: var(--forest); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.weekly { margin: 0; }
+.weekly__bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; padding-top: var(--s2); border-bottom: 1px solid var(--line); }
+.wk { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.wk__bar { display: block; width: 100%; border-radius: 4px 4px 0 0; background: var(--forest); opacity: .55; transition: opacity 150ms ease-out; }
+.wk.is-on .wk__bar, .wk:hover .wk__bar { opacity: 1; }
+.wk.is-zero .wk__bar { height: 2px !important; border-radius: 0; background: var(--line); opacity: 1; }
+.wk.is-on.is-zero .wk__bar { background: var(--forest); }
+.weekly__axis { display: flex; gap: 4px; margin-top: var(--s1); font-size: var(--t12); color: var(--grey); }
+.weekly__axis > span { flex: 1; min-width: 0; display: flex; justify-content: center; white-space: nowrap; }   /* a date may spill past its bar */
+.weekly__axis > span:first-child { justify-content: flex-start; }
+.weekly__axis > span:last-child { justify-content: flex-end; }
+.weekly__read { margin-top: var(--s2); padding: var(--s2) var(--s3); border-radius: var(--s2); background: var(--white); font-size: var(--t14); font-variant-numeric: tabular-nums; }
+.cats, .top { list-style: none; margin: 0; padding: 0; }
+.cat { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: var(--s3); padding: var(--s1) 0; font-size: var(--t14); }
+.cat__track { height: 10px; border-radius: var(--r-pill); background: var(--white); overflow: hidden; }
+.cat__fill { display: block; height: 100%; border-radius: var(--r-pill); background: var(--forest); }
+.cat__val { font-variant-numeric: tabular-nums; color: var(--ink); }
+.top__item { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: var(--s3); padding: var(--s2) 0; }
+.top__item + .top__item { border-top: 1px solid var(--line); }
+.stats__note { margin-top: var(--s4); font-size: var(--t12); color: var(--grey); }
+.history__head { margin-top: var(--s6); font: 600 var(--t20)/1.3 var(--display); color: var(--forest); }

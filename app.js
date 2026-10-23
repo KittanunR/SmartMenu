@@ -118,6 +118,8 @@
       // shop login (member.html)
       memberLogin: 'เข้าสู่ระบบร้านค้า',
       memberLogout: 'ออกจากระบบ',
+      logoutAsk: 'ออกจากระบบร้านจากเครื่องนี้?',
+      cancel: 'ยกเลิก',
       memberHistory: 'ประวัติการสั่งซื้อ',
       memberWins: (n) => `เครื่องนี้เข้าสู่ระบบเป็นร้าน ${n} อยู่ ถ้าจะใช้ QR ของร้านอื่น ให้ออกจากระบบก่อน`,
       memberExpired: 'หมดเวลาเข้าสู่ระบบของร้าน เข้าสู่ระบบอีกครั้งได้ที่ "เข้าสู่ระบบร้านค้า"',
@@ -227,6 +229,8 @@
       // shop login (member.html)
       memberLogin: 'Shop login',
       memberLogout: 'Log out',
+      logoutAsk: 'Log your shop out on this phone?',
+      cancel: 'Cancel',
       memberHistory: 'Order history',
       memberWins: (n) => `This phone is logged in as ${n}. To use another shop's QR, log out first.`,
       memberExpired: 'Your shop login has ended. Log in again with "Shop login".',
@@ -267,6 +271,8 @@
   // ---------- helpers ----------
   function storageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
   function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* private mode */ } }
+  function tabGet(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } }
+  function tabSet(k, v) { try { sessionStorage.setItem(k, v); } catch (_) { /* private mode */ } }
 
   function pickLanguage() {
     const q = new URLSearchParams(location.search).get('lang');
@@ -1116,18 +1122,20 @@
 
   // ---------- shop login (member.html saves the session; Member.gs on Apps Script checks it) ----------
   // The token is a key to this shop's account: it goes only to our order endpoint. A login wins over a shop QR.
+  // Kept in localStorage when 'remember me' was ticked (keep: true; older saves have no flag), else in sessionStorage.
   const MEMBER_KEY = 'menu-member';
   const TOKEN = /^[0-9a-f]{64}$/;
 
   function loadMember() {
     let saved = null;
-    try { saved = JSON.parse(storageGet(MEMBER_KEY) || 'null'); } catch (_) { saved = null; }
+    try { saved = JSON.parse(storageGet(MEMBER_KEY) || tabGet(MEMBER_KEY) || 'null'); } catch (_) { saved = null; }
     state.member = saved && TOKEN.test(saved.token || '') && typeof saved.name === 'string' && saved.name ? saved : null;
   }
 
   function forgetMember() {
     state.member = null;
     storageSet(MEMBER_KEY, '');
+    tabSet(MEMBER_KEY, '');
     renderShop();
   }
 
@@ -1143,9 +1151,9 @@
       const logoId = String(s.logo_id || '');
       let logo = logoId && logoId === m.logo_id ? m.logo : '';
       if (/^data:image\/(png|jpeg|webp);base64,/.test(s.logo_data_url || '')) logo = s.logo_data_url;
-      state.member = { token: m.token, name: s.name, phone_masked: String(s.phone_masked || ''),
+      state.member = { keep: m.keep !== false, token: m.token, name: s.name, phone_masked: String(s.phone_masked || ''),
         address_masked: String(s.address_masked || ''), logo_id: logo ? logoId : '', logo };
-      storageSet(MEMBER_KEY, JSON.stringify(state.member));
+      (state.member.keep ? storageSet : tabSet)(MEMBER_KEY, JSON.stringify(state.member));
       renderShop();
     } else if (res.error === 'session') {
       forgetMember();
@@ -1153,10 +1161,18 @@
     }
   }
 
+  function askLogout(on) {
+    document.getElementById('member-links').hidden = on;
+    document.getElementById('logout-confirm').hidden = !on;
+    document.getElementById(on ? 'logout-no' : 'member-logout').focus();
+  }
+
   function logoutMember() {
     const m = state.member;
     const url = String(state.config.order_endpoint || '').trim();
     forgetMember();
+    document.getElementById('member-links').hidden = false;
+    document.getElementById('logout-confirm').hidden = true;
     flash(TEXT[state.lang].loggedOut);
     if (m && url) postOnce(url, { contract: 'order.v1', action: 'logout', token: m.token }, 15000);
   }
@@ -1532,7 +1548,9 @@
       closeCart();
     });
     document.getElementById('reorder').addEventListener('click', () => reorder(lastOrderItems()));
-    document.getElementById('member-logout').addEventListener('click', logoutMember);
+    document.getElementById('member-logout').addEventListener('click', () => askLogout(true));
+    document.getElementById('logout-no').addEventListener('click', () => askLogout(false));
+    document.getElementById('logout-yes').addEventListener('click', logoutMember);
     document.getElementById('shop-forget').addEventListener('click', () => {
       forgetShop();
       document.getElementById('f-shop').focus();

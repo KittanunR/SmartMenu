@@ -315,3 +315,30 @@ test('the admin page gets the login page link to send with the temp password', (
   assert.equal(res.login_url, 'https://kittanunr.github.io/SmartMenu/member.html');
   assert.equal(b.admin('adminIssuePassword', res.shop.id).login_url, 'https://kittanunr.github.io/SmartMenu/member.html');
 });
+
+// ---------- "remember me" (2026-10-24) ----------
+test('remember me: ticked or not sent = 90-day session; unticked = 12 hours, on first and later logins', () => {
+  const b = ready();
+  const hoursLeft = () => (b.sheet('Sessions').records().at(-1).Expires_At.getTime() - Date.now()) / 3600000;
+  const { temp } = b.newShop();
+  b.post({ action: 'set_password', change_token: b.login(PHONE, temp).change_token, new_password: 'mango-sticky-rice', remember: false });
+  assert.ok(hoursLeft() > 11.9 && hoursLeft() <= 12, 'first login, unticked');
+  b.post({ action: 'login', phone: PHONE, password: 'mango-sticky-rice', remember: false });
+  assert.ok(hoursLeft() > 11.9 && hoursLeft() <= 12, 'later login, unticked');
+  b.post({ action: 'login', phone: PHONE, password: 'mango-sticky-rice', remember: true });
+  assert.ok(hoursLeft() > 90 * 24 - 0.1, 'ticked');
+  b.login(PHONE, 'mango-sticky-rice');
+  assert.ok(hoursLeft() > 90 * 24 - 0.1, 'an older page that sends nothing');
+  // Only false shortens it: junk keeps the long session rather than failing the login.
+  b.post({ action: 'login', phone: PHONE, password: 'mango-sticky-rice', remember: 'no' });
+  assert.ok(hoursLeft() > 90 * 24 - 0.1, 'junk');
+});
+
+test('a 12-hour session stops working after 12 hours', () => {
+  const b = ready();
+  const { temp } = b.newShop();
+  const res = b.post({ action: 'set_password', change_token: b.login(PHONE, temp).change_token, new_password: 'mango-sticky-rice', remember: false });
+  assert.equal(b.post({ action: 'me', token: res.token }).ok, true);
+  b.setCell('Sessions', 1, 'Expires_At', new Date(Date.now() - 1000));
+  assert.deepEqual(b.post({ action: 'me', token: res.token }), { ok: false, error: 'session' });
+});

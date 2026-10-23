@@ -7,6 +7,7 @@
  * Needs Admin.gs (table_, customerRow_, digits_, isDate_, isTrue_) and Bcrypt.gs. See wiki/member-accounts.md.
  */
 const SESSION_DAYS = 90;              // fixed from login (decided 2026-10-23), then log in again
+const SHORT_SESSION_HOURS = 12;       // 'remember me' unticked (2026-10-24): the phone keeps it for this tab only
 const CHANGE_TTL_S = 900;             // a temp-password login has 15 min to set the new password
 const LOGIN_FAILS_PER_PHONE = 5;      // then that phone is locked for LOGIN_LOCK_S
 const LOGIN_LOCK_S = 900;
@@ -71,7 +72,7 @@ function login_(o) {
     cache.put('chg:' + sha256Hex_(change), acct.id, CHANGE_TTL_S);
     return { ok: true, must_change: true, change_token: change };
   }
-  return newSession_(ss, acct.id);
+  return newSession_(ss, acct.id, o.remember !== false);
 }
 
 function setPassword_(o) {
@@ -98,7 +99,7 @@ function setPassword_(o) {
       Temp_Expires_At: '', Password_Set_At: now });
     cache.remove(kChange);
     revokeSessions_(ss, id, now);
-    return newSession_(ss, id);
+    return newSession_(ss, id, o.remember !== false);
   } finally {
     lock.releaseLock();
   }
@@ -171,11 +172,13 @@ function logout_(o) {
   return { ok: true };
 }
 
-function newSession_(ss, id) {
+// Pages from before 2026-10-24 send no 'remember': they get the long session, as before.
+function newSession_(ss, id, remember) {
   const token = randomHex_(32);
   const now = new Date();
+  const life = remember ? SESSION_DAYS * DAY_MS : SHORT_SESSION_HOURS * 3600 * 1000;
   appendByHeader_(ss.getSheetByName('Sessions'), { Token_Hash: sha256Hex_(token), Customer_ID: id, Created_At: now,
-    Expires_At: new Date(now.getTime() + SESSION_DAYS * DAY_MS), Last_Seen: now, Revoked_At: '' });
+    Expires_At: new Date(now.getTime() + life), Last_Seen: now, Revoked_At: '' });
   return { ok: true, token, shop: memberProfile_(ss, id, '') };
 }
 

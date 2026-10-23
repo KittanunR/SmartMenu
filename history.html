@@ -10,8 +10,8 @@
   <title>ประวัติการสั่งซื้อ · Betagro Shop</title>
   <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2026-10-24c">
-  <script src="history.js?v=2026-10-24c" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2026-10-24d">
+  <script src="history.js?v=2026-10-24d" defer></script>
 </head>
 <body class="member">
   <!-- Order History (Phase 4): the logged-in shop's own web orders. Needs the session from member.html; see history.js. -->
@@ -37,6 +37,28 @@
     <div class="notice" id="h-message" role="alert" hidden></div>
     <a class="order-btn member__go" id="h-login" href="member.html" data-t="login" hidden></a>
     <button class="text-btn" id="h-retry" type="button" data-t="retry" hidden></button>
+
+    <!-- Analytics (Phase 5): worked out in history.js from the same orders as the list below; no extra request. -->
+    <section class="stats" id="h-stats" aria-labelledby="stats-title" hidden>
+      <h2 class="stats__title" id="stats-title" data-t="statsTitle"></h2>
+      <div class="kpis">
+        <p class="kpi"><span class="kpi__label" data-t="kTotal"></span><span class="kpi__value" id="k-total"></span></p>
+        <p class="kpi"><span class="kpi__label" data-t="kOrders"></span><span class="kpi__value" id="k-orders"></span></p>
+        <p class="kpi"><span class="kpi__label" data-t="kAvg"></span><span class="kpi__value" id="k-avg"></span></p>
+      </div>
+      <figure class="weekly">
+        <figcaption class="stats__sub" data-t="weekly"></figcaption>
+        <div class="weekly__bars" id="w-bars"></div>
+        <div class="weekly__axis" id="w-axis" aria-hidden="true"></div>
+        <p class="weekly__read" id="w-read" aria-live="polite"></p>
+      </figure>
+      <h3 class="stats__sub" data-t="cats"></h3>
+      <ul class="cats" id="cats"></ul>
+      <h3 class="stats__sub" data-t="top"></h3>
+      <ol class="top" id="top"></ol>
+      <p class="stats__note" id="stats-note"></p>
+    </section>
+    <h2 class="history__head" id="h-head" data-t="ordersTitle" hidden></h2>
 
     <ol class="history" id="h-list" hidden></ol>
     <p class="member__help" id="h-limit" data-t="limit" hidden></p>
