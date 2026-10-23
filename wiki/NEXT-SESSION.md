@@ -1,4 +1,10 @@
-# Next session — pick up here (written 2026-10-23 01:38)
+# Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-23 evening)
+
+## Latest (2026-10-23 evening) — read first
+- LIVE: CI gate (validate → deploy, Pages Source = GitHub Actions, commit 02d6bc7).
+- LOCAL, NOT PUSHED: reorder button (app.js/styles.css?v=2026-10-23e) + prices carried over to 24–30 Oct (data/prices/2026-10-24.json) + wiki notes. Push = one commit "Reorder button + carry prices over to 24–30 Oct" → check Actions ✓ → live site shows 24–30 ต.ค.
+- Node 24 LTS installed on this PC → `npm run validate` works (open a new terminal).
+- Next ideas (Petch picks): full PDPA notice (needs Petch's wording), PWA install, clean sandbox test data (W261023-007, test customers), server-side reorder by shop code only if shops ask. Next price publish due Fri 30/10.
 
 Say: "อ่าน SmartMenu/wiki/NEXT-SESSION.md แล้วทำต่อ". Open in Claude Code inside `Documents\Smart menu\SmartMenu` if building the DIFOT board (option 1 below).
 

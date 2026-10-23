@@ -4,6 +4,7 @@
   "description": "Static QR price menu for Betagro Shop Sukhumvit B2B sales",
   "scripts": {
     "validate": "node scripts/validate.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "publish": "node scripts/publish-prices.mjs",
     "qr": "node scripts/make-qr.mjs",
     "serve": "python3 -m http.server 8000"

@@ -20,5 +20,7 @@ Dated history of decisions for the QR price-menu site. Never "currently" — dat
 
 - [smartmenu-capacity-risks-login.md](smartmenu-capacity-risks-login.md) — 2026-10-23 capacity, single points of failure, customer login options (SmartMenu only)
 
+- [member-accounts.md](member-accounts.md) — 2026-10-23 optional shop login (Guest/Member), admin-issued temp password, History + Analytics
+
 ## Open items
 - [open-items.md](open-items.md) — waiting on real SKU list + sample price PDF

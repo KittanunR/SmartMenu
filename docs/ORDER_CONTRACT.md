@@ -36,5 +36,5 @@ Error codes: `busy` (lock not free in 20 s) and `server` → the site retries. `
 
 Site behaviour: up to 3 attempts (pauses 2 s, 5 s; 30 s timeout each; 75 s in all). If none succeeds the cart stays, and the done view offers "Send order to LINE" + "Try again"; after tapping LINE it also offers "Sent on LINE? Clear the cart".
 
-Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty, Web_Client_ID), Order_Items +N rows (one write), Event +1 row (Station="Web", Action="Ordered", Note ends ", shop QR" for QR orders), Master +1 row (Type="Customer", with Address / Contact_Name / LINE_Name) if the phone is new and no shop_code was sent.
+Writes (sandbox sheet only): Order +1 row (Source="Web", Order_ID "W"+yymmdd+"-"+nnn, Slip_Photo empty, Web_Client_ID, Auth = "guest" or "shop_qr"; "member" from Phase 3), Order_Items +N rows (one write; Category = pork / chicken / egg / fish from the SKU prefix, else "other"), Event +1 row (Station="Web", Action="Ordered", Note ends ", shop QR" for QR orders), Master +1 row (Type="Customer", with Address / Contact_Name / LINE_Name) if the phone is new and no shop_code was sent.
 `makeShopCodes()` (run by hand) is the only thing that edits existing rows: it fills empty Master.Shop_Code / Shop_Link for active customers.

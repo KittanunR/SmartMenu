@@ -87,6 +87,8 @@ repo นี้เป็นสาธารณะ ห้าม commit ออเด
 | `scripts/validate.mjs` | Checks everything (data, config.json, files the pages load, that app.js / Code.gs parse). Runs in CI on every push; a push to `main` deploys only if it passes. |
 | `scripts/publish-prices.mjs` | Checks an extractor's JSON and publishes it. |
 | `scripts/make-qr.mjs` | Makes the QR code PNG. |
+| `backend/apps-script/` | The Apps Script web app: `Code.gs` (orders, shop QR, accounts) + `Bcrypt.gs` (vendored bcryptjs 2.4.3 for password hashes). Paste both into the Apps Script project. |
+| `tests/` | `npm test`: runs Code.gs against an in-memory sheet (`tests/helpers/apps-script.mjs`). CI runs it before every deploy. |
 | `tools/shop-qr.html` | Makes each shop's private QR (cards to print / PNG for LINE) in the browser; uploads nothing. QR library in `tools/vendor/`. |
 | `assets/products/` | Product photos `<SKU>.webp` (600 px square), cut from the Betagro catalogue PDF and matched by Thai name; `photo_match` in the catalog says exact / close / similar. Placeholder SVGs are for new SKUs only — an active, priced product without a real photo fails `npm run validate`. |
 

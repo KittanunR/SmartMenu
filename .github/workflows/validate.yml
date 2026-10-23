@@ -16,8 +16,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # validate.mjs uses Node built-ins only, so no npm install is needed.
+      # validate.mjs and the tests use Node built-ins only, so no npm install is needed.
       - run: node scripts/validate.mjs
+      # Apps Script order/account rules against an in-memory sheet (tests/helpers/apps-script.mjs).
+      - run: node --test "tests/**/*.test.mjs"
 
   deploy:
     needs: validate

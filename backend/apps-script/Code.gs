@@ -1,37 +1,69 @@
 /**
  * SmartMenu → DIFOT order intake (Google Apps Script, standalone project in btgs.sukhumvit Drive, writes to the SANDBOX sheet).
  * Contract: docs/ORDER_CONTRACT.md (order.v1). Orders only ever APPEND rows; never edit or delete.
- * The one exception is makeShopCodes(), run by hand, which fills EMPTY Shop_Code / Shop_Link cells in Master.
+ * The exceptions are run by hand and only fill EMPTY cells: makeShopCodes() (Master.Shop_Code / Shop_Link) and
+ * backfillCategories() (Order_Items.Category).
  * Sandbox sheet id 1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg (2026-10-22).
  */
 const SHEET_ID = '1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg'; // SANDBOX copy. Never the original DIFOT_Pilot_SU22.
 const SHOP_ID = 'SU22';
 const TZ = 'Asia/Bangkok';
 const SITE_URL = 'https://kittanunr.github.io/SmartMenu/';
-const ORDER_EXTRA_COLS = ['Source', 'Web_Shop_Name', 'Web_Phone', 'Web_Delivery_Date', 'Web_Note', 'Web_Total', 'Web_Client_ID'];
+// Auth = how the order was identified: 'guest' (typed form), 'shop_qr' (shop's own link), 'member' (logged in).
+const ORDER_EXTRA_COLS = ['Source', 'Web_Shop_Name', 'Web_Phone', 'Web_Delivery_Date', 'Web_Note', 'Web_Total', 'Web_Client_ID', 'Auth'];
 const MAX_BODY = 30000;            // chars; a real 40-line order is ~8,000
 const LOCK_WAIT_MS = 20000;        // then answer 'busy' and let the site retry
 const LIMIT_PER_PHONE = 5;         // orders per phone per hour
 const LIMIT_ALL = 40;              // orders per hour from the whole site (stops a flood filling the sheet)
 const DEDUPE_SCAN_ROWS = 500;      // recent Order rows checked for a repeated client_order_id
-const MASTER_EXTRA_COLS = ['Phone', 'Source', 'Address', 'Contact_Name', 'LINE_Name', 'Shop_Code', 'Shop_Link'];
+const MASTER_EXTRA_COLS = ['Phone', 'Source', 'Address', 'Contact_Name', 'LINE_Name', 'Shop_Code', 'Shop_Link',
+  'Logo_File_ID', 'Member_Status'];
 // Shop codes: no 0/O, 1/I/L, so a code read off a sticker is never ambiguous. 10 chars ≈ 49 bits.
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 10;
 const LIMIT_BAD_CODES = 60;        // wrong shop codes per hour from the whole site, then lookups pause
-const ITEM_COLS = ['Item_ID', 'Order_ID', 'SKU', 'Name_TH', 'Qty', 'Qty_Unit', 'Unit_Price', 'Line_Total'];
+const ITEM_COLS = ['Item_ID', 'Order_ID', 'SKU', 'Name_TH', 'Qty', 'Qty_Unit', 'Unit_Price', 'Line_Total', 'Category'];
+// Shop accounts. Password_Hash is bcrypt only; no password, temporary or chosen, is ever written anywhere.
+const AUTH_COLS = ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At'];
+const SESSION_COLS = ['Token_Hash', 'Customer_ID', 'Created_At', 'Expires_At', 'Last_Seen', 'Revoked_At'];
+// Same rule as the catalog check (scripts/lib/checks.mjs SKU_PREFIX): a SKU's prefix names its category.
+const SKU_CATEGORY = { PK: 'pork', CK: 'chicken', EG: 'egg', FS: 'fish' };
 
-/** Run once by hand: adds missing columns at the far right and the Order_Items tab. Safe to re-run. */
+/** Run by hand after each Code.gs update: adds missing tabs, and missing columns at the far right. Safe to re-run. */
 function setup() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   addColsIfMissing_(ss.getSheetByName('Order'), ORDER_EXTRA_COLS);
   addColsIfMissing_(ss.getSheetByName('Master'), MASTER_EXTRA_COLS);
-  let items = ss.getSheetByName('Order_Items');
-  if (!items) {
-    items = ss.insertSheet('Order_Items');
-    items.getRange(1, 1, 1, ITEM_COLS.length).setValues([ITEM_COLS]);
-  }
+  ensureTab_(ss, 'Order_Items', ITEM_COLS);
+  ensureTab_(ss, 'Member_Auth', AUTH_COLS);
+  ensureTab_(ss, 'Sessions', SESSION_COLS);
   return 'ok';
+}
+
+function ensureTab_(ss, name, cols) {
+  const sheet = ss.getSheetByName(name);
+  if (sheet) addColsIfMissing_(sheet, cols);
+  else ss.insertSheet(name).getRange(1, 1, 1, cols.length).setValues([cols]);
+}
+
+function categoryOf_(sku) {
+  return SKU_CATEGORY[String(sku).slice(0, 2)] || 'other';
+}
+
+/** Run by hand once after setup(): order lines written before Category existed get it from their SKU. */
+function backfillCategories() {
+  const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Order_Items');
+  const data = sh.getDataRange().getValues();
+  const iSku = data[0].indexOf('SKU'), iCat = data[0].indexOf('Category');
+  if (iCat === -1) throw new Error('Run setup() first: Order_Items has no Category column.');
+  let filled = 0;
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][iCat] || !data[r][iSku]) continue;
+    sh.getRange(r + 1, iCat + 1, 1, 1).setValue(categoryOf_(data[r][iSku]));
+    filled++;
+  }
+  console.log(filled + ' order line(s) got a category');
+  return filled;
 }
 
 function addColsIfMissing_(sheet, cols) {
@@ -179,12 +211,12 @@ function doPost(e) {
       Source: 'Web', Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Delivery_Date: (o.delivery && o.delivery.date) || '',
       Web_Note: [o.delivery && o.delivery.address_note, o.note, o.customer.line_name && ('LINE: ' + o.customer.line_name)].filter(Boolean).join(' | '),
-      Web_Total: o.total, Web_Client_ID: o.client_order_id || ''
+      Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: shop ? 'shop_qr' : 'guest'
     });
 
     appendRowsByHeader_(ss.getSheetByName('Order_Items'), o.items.map((it, i) => ({
       Item_ID: orderId + '-' + (i + 1), Order_ID: orderId, SKU: it.sku, Name_TH: it.name_th,
-      Qty: it.qty, Qty_Unit: it.qty_unit, Unit_Price: it.unit_price, Line_Total: it.line_total
+      Qty: it.qty, Qty_Unit: it.qty_unit, Unit_Price: it.unit_price, Line_Total: it.line_total, Category: categoryOf_(it.sku)
     })));
 
     appendByHeader_(ss.getSheetByName('Event'), {
