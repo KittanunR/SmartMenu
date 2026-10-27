@@ -3,20 +3,23 @@
  * doPost with { action: 'login' | 'set_password' | 'me' | 'logout' | 'history', ... }; orders carry { session: token }.
  * - First login uses the temporary password from the admin page and must set the shop's own password.
  * - A session token is 32 random bytes (64 hex). Only its SHA-256 is stored (Sessions.Token_Hash).
- * - Same answer for a wrong phone and a wrong password; 5 wrong tries lock a phone for 15 min.
- * Needs Admin.gs (table_, customerRow_, digits_, isDate_, isTrue_) and Bcrypt.gs. See wiki/member-accounts.md.
+ * - A shop logs in with its phone or its login name (Member_Auth.Login_Name, 2026-10-27) and the same password.
+ * - Same answer for a wrong phone / name and a wrong password; 5 wrong tries lock that account for 15 min, whichever
+ *   of the two was typed.
+ * Needs Admin.gs (table_, customerRow_, digits_, isDate_, isTrue_, looksLikePhone_, loginKey_) and Bcrypt.gs.
+ * See wiki/member-accounts.md.
  */
 const SESSION_DAYS = 90;              // fixed from login (decided 2026-10-23), then log in again
 const SHORT_SESSION_HOURS = 12;       // 'remember me' unticked (2026-10-24): the phone keeps it for this tab only
 const CHANGE_TTL_S = 900;             // a temp-password login has 15 min to set the new password
-const LOGIN_FAILS_PER_PHONE = 5;      // then that phone is locked for LOGIN_LOCK_S
+const LOGIN_FAILS_PER_ACCOUNT = 5;    // then that account is locked for LOGIN_LOCK_S
 const LOGIN_LOCK_S = 900;
 const LOGIN_FAILS_ALL = 100;          // failed logins per hour across the site, then login pauses
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72;        // bcrypt ignores anything after 72 bytes
 const LAST_SEEN_EVERY_MS = 12 * 3600 * 1000;
 const TOKEN_RE = /^[0-9a-f]{64}$/;
-// Checked when no account matches, so a wrong phone takes as long as a wrong password. Hash of random text.
+// Checked when no account matches, so a wrong phone or name takes as long as a wrong password. Hash of random text.
 const DUMMY_HASH = '$2a$12$HQFAX./GkC1uj8/cE2UqyON/ovY/BEYSFGOhB08kdn8oH.he/VcKq';
 const COMMON_PASSWORDS = ['password', 'password1', 'password123', '12345678', '123456789', '1234567890', '87654321',
   '11111111', '00000000', '12341234', 'qwertyui', 'qwerty123', 'iloveyou', 'abcd1234', 'abc12345', 'admin123',
@@ -46,25 +49,32 @@ function memberAction_(o) {
 
 function login_(o) {
   const bad = { ok: false, error: 'bad_login' };
-  const phone = digits_(o.phone);
+  // o.user = phone or login name; login pages from before 2026-10-27 send o.phone.
+  const user = String(typeof o.user === 'string' ? o.user : o.phone == null ? '' : o.phone).trim();
   const password = typeof o.password === 'string' ? o.password : '';
-  if (!/^0\d{8,9}$/.test(phone) || !password || password.length > 200) return bad;
+  if (!user || user.length > 200 || !password || password.length > 200) return bad;
+  const isPhone = looksLikePhone_(user);
+  const phone = digits_(user), key = loginKey_(user);
+  if (isPhone ? !/^0\d{8,9}$/.test(phone) : !key) return bad;
   const cache = CacheService.getScriptCache();
-  const kPhone = 'lf:p:' + phone, kAll = failKeyAll_();
-  const nPhone = Number(cache.get(kPhone)) || 0, nAll = Number(cache.get(kAll)) || 0;
-  if (nPhone >= LOGIN_FAILS_PER_PHONE) return { ok: false, error: 'locked' };
+  const kAll = failKeyAll_(), nAll = Number(cache.get(kAll)) || 0;
   if (nAll >= LOGIN_FAILS_ALL) return { ok: false, error: 'rate' };
 
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  const acct = memberAccount_(ss, a => digits_(a.get('Login_Phone')) === phone);
+  const acct = memberAccount_(ss, isPhone ? a => digits_(a.get('Login_Phone')) === phone
+    : a => loginKey_(a.get('Login_Name')) === key);
+  // Counted per account, so switching between phone and name gives no extra tries; per typed text when none matches.
+  const kFail = acct ? 'lf:a:' + acct.id : 'lf:u:' + sha256Hex_(isPhone ? phone : key);
+  const nFail = Number(cache.get(kFail)) || 0;
+  if (nFail >= LOGIN_FAILS_PER_ACCOUNT) return { ok: false, error: 'locked' };
   const typed = acct && acct.mustChange ? normTemp_(password) : password;
   const good = bcrypt_.compareSync(typed, acct && acct.hash ? acct.hash : DUMMY_HASH) && !!acct && !!acct.hash;
   if (!good) {
-    cache.put(kPhone, String(nPhone + 1), LOGIN_LOCK_S);
+    cache.put(kFail, String(nFail + 1), LOGIN_LOCK_S);
     cache.put(kAll, String(nAll + 1), 3700);
     return bad;
   }
-  cache.remove(kPhone);
+  cache.remove(kFail);
   if (acct.mustChange) {
     // Only said after the right temp password, so it tells a stranger nothing.
     if (!(isDate_(acct.expires) && acct.expires.getTime() > Date.now())) return { ok: false, error: 'temp_expired' };
@@ -87,7 +97,7 @@ function setPassword_(o) {
   const acct = memberAccount_(ss, a => a.str('Customer_ID') === id);
   if (!acct || !acct.mustChange || !acct.hash) return expired;
   const pw = typeof o.new_password === 'string' ? o.new_password : '';
-  const problem = passwordProblem_(pw, acct.phone);
+  const problem = passwordProblem_(pw, acct.phone, acct.loginName);
   if (problem) return { ok: false, error: problem };
   if (bcrypt_.compareSync(normTemp_(pw), acct.hash)) return { ok: false, error: 'password_same' };
 
@@ -105,12 +115,17 @@ function setPassword_(o) {
   }
 }
 
-/** '' or why the shop's chosen password is refused (rules decided 2026-10-23: length, not phone, not common). */
-function passwordProblem_(pw, phone) {
+/**
+ * '' or why the shop's chosen password is refused (rules decided 2026-10-23: length, not phone, not common;
+ * 2026-10-27: not the login name either, which is no secret).
+ */
+function passwordProblem_(pw, phone, loginName) {
   if (utf8Length_(pw) > PASSWORD_MAX_BYTES) return 'password_long';
   if (Array.from(pw).length < PASSWORD_MIN) return 'password_short';
   const squashed = pw.replace(/[\s-]/g, '');
   if (squashed.indexOf(phone) !== -1 || squashed.indexOf(phone.slice(1)) !== -1) return 'password_phone';
+  const name = loginKey_(loginName);
+  if (name.length >= 3 && loginKey_(pw).indexOf(name) !== -1) return 'password_name';
   const lower = pw.toLowerCase();
   if (COMMON_PASSWORDS.indexOf(lower) !== -1 || /^(.)\1+$/.test(pw)) return 'password_common';
   return '';
@@ -184,7 +199,7 @@ function newSession_(ss, id, remember) {
 
 /**
  * The account whose Member_Auth row passes `match`, if it may log in: its customer exists, is open for
- * ordering and is not disabled. { id, phone, hash, mustChange, expires, auth, row } or null.
+ * ordering and is not disabled. { id, phone, loginName, hash, mustChange, expires, auth, row } or null.
  */
 function memberAccount_(ss, match) {
   const auth = table_(ss.getSheetByName('Member_Auth'));
@@ -195,7 +210,8 @@ function memberAccount_(ss, match) {
     const m = table_(ss.getSheetByName('Master'));
     const c = customerRow_(m, id);
     if (c === -1 || isInactive_(m.get(c, 'Active')) || m.str(c, 'Member_Status') === 'disabled') return null;
-    return { id, phone: digits_(auth.get(r, 'Login_Phone')), hash: auth.str(r, 'Password_Hash'),
+    return { id, phone: digits_(auth.get(r, 'Login_Phone')), loginName: auth.str(r, 'Login_Name'),
+      hash: auth.str(r, 'Password_Hash'),
       mustChange: isTrue_(auth.get(r, 'Must_Change')), expires: auth.get(r, 'Temp_Expires_At'), auth, row: r };
   }
   return null;

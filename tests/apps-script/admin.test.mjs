@@ -189,6 +189,47 @@ test('reset gives a new temporary password and logs every device out', () => {
   assert.equal(s[1].Revoked_At, '', 'another shop\'s session is untouched');
 });
 
+// ---------- login name (2026-10-27): a shop may log in with its phone or this name ----------
+test('login name: the shop name unless one is typed; it must not look like a phone and no two shops share it', () => {
+  const b = ready();
+  const first = b.call('adminCreateShop', SHOP);
+  assert.equal(b.sheet('Member_Auth').records()[0].Login_Name, 'Café Sukhumvit');
+  assert.equal(first.shop.login_name, 'Café Sukhumvit');
+  // Same name typed with other capitals and spaces is the same login.
+  assert.deepEqual(b.call('adminCreateShop', { ...SHOP, phone: '0822222222', login: ' café  SUKHUMVIT ' }),
+    { ok: false, error: 'login_taken', customer_id: 'CUS-W001' });
+  assert.deepEqual(b.call('adminCreateShop', { ...SHOP, phone: '0822222222' }),
+    { ok: false, error: 'login_taken', customer_id: 'CUS-W001' }, 'two branches with one name need a login name each');
+  for (const login of ['0822222222', '082-222 2222', 'x'.repeat(121)]) {
+    assert.deepEqual(b.call('adminCreateShop', { ...SHOP, phone: '0822222222', login }), { ok: false, error: 'login_name' }, login);
+  }
+  const second = b.call('adminCreateShop', { ...SHOP, phone: '0822222222', login: 'Café Sukhumvit 2' });
+  assert.equal(second.shop.login_name, 'Café Sukhumvit 2');
+  assert.equal(b.sheet('Member_Auth').records().length, 2, 'refused tries made no account');
+});
+
+test('edit sets the login name; empty means the shop name again; another shop\'s name is refused', () => {
+  const b = ready();
+  b.call('adminCreateShop', SHOP);
+  b.call('adminCreateShop', { ...SHOP, name: 'Noodle Corner', phone: '0822222222' });
+  assert.equal(b.call('adminUpdateShop', 'CUS-W001', { ...SHOP, login: 'hotpot22' }).shop.login_name, 'hotpot22');
+  assert.deepEqual(b.call('adminUpdateShop', 'CUS-W001', { ...SHOP, login: 'noodle corner' }),
+    { ok: false, error: 'login_taken', customer_id: 'CUS-W002' });
+  assert.equal(b.sheet('Member_Auth').records()[0].Login_Name, 'hotpot22', 'a refused edit changes nothing');
+  assert.equal(b.call('adminUpdateShop', 'CUS-W001', { ...SHOP, name: 'Café 22', login: '' }).shop.login_name, 'Café 22');
+});
+
+test('make member: the first account gets the shop name, or phone only when another shop logs in with that name', () => {
+  const b = ready();
+  b.call('adminCreateShop', { ...SHOP, name: 'Café Test', phone: '0899999999' });
+  b.post(guestOrder());                                   // guest customer "Café Test", 0812345678 = CUS-W002
+  b.post(guestOrder({ customer: { shop_name: 'Somchai Pork', contact_name: 'S', phone: '0833333333', line_name: '' } }));
+  assert.equal(b.call('adminIssuePassword', 'CUS-W002').shop.login_name, '', 'name taken: phone only for now');
+  assert.equal(b.call('adminIssuePassword', 'CUS-W003').shop.login_name, 'Somchai Pork');
+  b.call('adminUpdateShop', 'CUS-W003', { name: 'Somchai Pork', phone: '0833333333', login: 'somchai' });
+  assert.equal(b.call('adminIssuePassword', 'CUS-W003').shop.login_name, 'somchai', 'a reset keeps the login name');
+});
+
 test('make member: an existing guest customer gets an account with its Master phone', () => {
   const b = ready();
   b.post(guestOrder());
@@ -253,7 +294,7 @@ test('edit changes the shop details and moves the login phone with the phone', (
 test('edit refuses a phone that belongs to another customer, and unknown ids', () => {
   const b = ready();
   b.call('adminCreateShop', SHOP);
-  b.call('adminCreateShop', { ...SHOP, phone: '0822222222' });
+  b.call('adminCreateShop', { ...SHOP, name: 'Noodle Corner', phone: '0822222222' });
   assert.deepEqual(b.call('adminUpdateShop', 'CUS-W002', SHOP), { ok: false, error: 'phone_taken', customer_id: 'CUS-W001' });
   assert.equal(b.call('adminUpdateShop', 'CUS-W001', SHOP).ok, true, 'keeping its own phone is fine');
   assert.deepEqual(b.call('adminUpdateShop', 'CUS-W404', SHOP), { ok: false, error: 'not_found' });
@@ -263,23 +304,51 @@ test('edit refuses a phone that belongs to another customer, and unknown ids', (
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(100)]).toString('base64');
 const JPG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100)]).toString('base64');
 
-test('logo goes to a private Drive folder; a new one replaces the old', () => {
+// Logos sit in Master_Images next to the sheet (2026-10-27), so the DIFOT AppSheet app shows them from Logo_Image.
+const logoFiles = b => [...b.drive.files.values()].filter(f => f.blob);
+const folderOf = (b, f) => b.drive.folders.get(f.folderId);
+
+test('logo goes to Master_Images next to the sheet, with its path in Logo_Image; a new one replaces the old', () => {
   const b = ready();
   b.call('adminCreateShop', SHOP);
   const res = b.call('adminSetLogo', 'CUS-W001', { mime: 'image/png', base64: PNG });
   assert.equal(res.ok, true);
   assert.equal(res.shop.has_logo, true);
-  const first = b.sheet('Master').records()[0].Logo_File_ID;
-  assert.ok(b.drive.files.has(first));
-  const folderId = b.properties.get('LOGO_FOLDER_ID');
-  assert.equal(b.drive.files.get(first).folderId, folderId);
+  const row1 = b.sheet('Master').records()[0];
+  const first = b.drive.files.get(row1.Logo_File_ID);
+  const folder = folderOf(b, first);
+  assert.equal(folder.name, 'Master_Images');
+  assert.equal(b.drive.folders.get(folder.parentId).name, 'SmartMenuSandboxDIFOT-93916087', 'the folder the sheet is in');
+  assert.match(row1.Logo_Image, /^Master_Images\/CUS-W001-logo-\d{12}\.png$/);
+  assert.equal(row1.Logo_Image, 'Master_Images/' + first.getName());
 
   b.call('adminSetLogo', 'CUS-W001', { mime: 'image/jpeg', base64: JPG });
-  const second = b.sheet('Master').records()[0].Logo_File_ID;
-  assert.notEqual(second, first);
-  assert.equal(b.drive.files.get(first).trashed, true);
-  assert.equal(b.drive.files.get(second).folderId, folderId, 'same folder reused');
+  const row2 = b.sheet('Master').records()[0];
+  assert.notEqual(row2.Logo_File_ID, row1.Logo_File_ID);
+  assert.equal(first.trashed, true);
+  assert.equal(folderOf(b, b.drive.files.get(row2.Logo_File_ID)).id, folder.id, 'same folder reused');
+  assert.match(row2.Logo_Image, /\.jpg$/);
+  assert.equal(b.drive.folders.size, 3, 'My Drive, app folder, Master_Images, and nothing else');
   assert.equal(b.call('adminGetLogo', 'CUS-W001').data_url, 'data:image/jpeg;base64,' + JPG);
+});
+
+test('moveLogosForAppSheet moves logos from the old private folder and fills Logo_Image; re-running does nothing', () => {
+  const b = ready();
+  b.call('adminCreateShop', SHOP);
+  b.call('adminCreateShop', { ...SHOP, name: 'Noodle Corner', phone: '0822222222' });
+  // As before 2026-10-27: a logo in its own private folder, Logo_Image empty.
+  const old = b.drive.api.createFolder('SmartMenu shop logos (private)');
+  const file = old.createFile(b.ctx.Utilities.newBlob([1, 2, 3], 'image/png', 'CUS-W001-logo.png'));
+  const head = b.sheet('Master').header();
+  b.sheet('Master').set(2, head.indexOf('Logo_File_ID') + 1, file.getId());
+
+  assert.equal(b.ctx.moveLogosForAppSheet(), 1);
+  const row = b.sheet('Master').records()[0];
+  assert.equal(row.Logo_Image, 'Master_Images/CUS-W001-logo.png');
+  assert.equal(folderOf(b, file).name, 'Master_Images');
+  assert.equal(file.trashed, false);
+  assert.equal(b.sheet('Master').records()[1].Logo_Image, '', 'a shop without a logo is left alone');
+  assert.equal(b.ctx.moveLogosForAppSheet(), 0);
 });
 
 test('logo upload checks type, content and size', () => {
@@ -293,7 +362,7 @@ test('logo upload checks type, content and size', () => {
     [null, 'logo_type'],
   ];
   for (const [logo, error] of bad) assert.deepEqual(b.call('adminSetLogo', 'CUS-W001', logo), { ok: false, error }, error);
-  assert.equal(b.drive.files.size, 0);
+  assert.equal(logoFiles(b).length, 0);
   assert.deepEqual(b.call('adminGetLogo', 'CUS-W001'), { ok: false, error: 'no_logo' });
 });
 

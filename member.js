@@ -1,4 +1,4 @@
-// Shop login page (Phase 3): phone + password → a session token kept in this browser ('menu-member': localStorage
+// Shop login page (Phase 3): phone or shop login name + password → a session token kept in this browser ('menu-member': localStorage
 // when 'remember me' is ticked, else sessionStorage = this tab only), which app.js sends with orders. The first login uses the temporary password from the admin
 // page and must set the shop's own password. Talks only to the order endpoint in config.json (Member.gs).
 // Everything shown is set with textContent.
@@ -13,7 +13,8 @@
       backToMenu: 'กลับไปหน้าเมนู',
       loginTitle: 'เข้าสู่ระบบร้านค้า',
       loginIntro: 'สำหรับร้านที่มีบัญชีกับ Betagro Shop แล้ว เข้าระบบครั้งเดียว สั่งของได้โดยไม่ต้องกรอกข้อมูลร้านอีก',
-      phone: 'เบอร์โทรร้าน',
+      user: 'เบอร์โทรร้าน หรือ ชื่อร้าน',
+      userHint: 'ใส่อย่างใดอย่างหนึ่ง เช่น 0812345678 หรือชื่อร้านที่ได้ทาง LINE',
       password: 'รหัสผ่าน',
       show: 'แสดง',
       hide: 'ซ่อน',
@@ -27,22 +28,22 @@
       newIntro: 'รหัสชั่วคราวใช้ได้ครั้งเดียว ตั้งรหัสผ่านใหม่ที่ร้านจำได้ ครั้งต่อไปใช้รหัสนี้เข้าระบบ',
       newPassword: 'รหัสผ่านใหม่',
       confirmPassword: 'พิมพ์รหัสผ่านใหม่อีกครั้ง',
-      rules: 'อย่างน้อย 8 ตัวอักษร ใช้ภาษาไทยหรือเว้นวรรคได้ ห้ามใช้เบอร์โทร และห้ามใช้รหัสที่เดาง่าย เช่น 12345678',
+      rules: 'อย่างน้อย 8 ตัวอักษร ใช้ภาษาไทยหรือเว้นวรรคได้ ห้ามใช้เบอร์โทรหรือชื่อร้าน และห้ามใช้รหัสที่เดาง่าย เช่น 12345678',
       newBtn: 'บันทึกรหัสผ่านและเข้าสู่ระบบ',
       inTitle: 'เข้าสู่ระบบแล้ว',
       inName: (n) => n,
       toMenu: 'ไปหน้าเมนู',
       logout: 'ออกจากระบบ',
-      logoutAsk: 'ออกจากระบบร้านจากเครื่องนี้? ครั้งหน้าต้องใส่เบอร์และรหัสผ่านใหม่',
+      logoutAsk: 'ออกจากระบบร้านจากเครื่องนี้? ครั้งหน้าต้องใส่เบอร์หรือชื่อร้าน และรหัสผ่านใหม่',
       cancel: 'ยกเลิก',
       loggedOut: 'ออกจากระบบแล้ว',
       busyLogin: 'กำลังเข้าสู่ระบบ…',
       busySave: 'กำลังบันทึก…',
       err: {
-        phone: 'เบอร์โทร 9–10 หลัก ขึ้นต้นด้วย 0',
+        user: 'ใส่เบอร์โทร 9–10 หลัก ขึ้นต้นด้วย 0 หรือชื่อร้าน',
         password: 'กรอกรหัสผ่าน',
         mismatch: 'รหัสผ่านสองช่องไม่ตรงกัน',
-        bad_login: 'เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง',
+        bad_login: 'เบอร์โทร/ชื่อร้าน หรือรหัสผ่านไม่ถูกต้อง',
         locked: 'ใส่รหัสผิดหลายครั้ง ลองใหม่ในอีก 15 นาที หรือทักร้านทาง LINE',
         rate: 'ระบบหยุดรับการเข้าสู่ระบบชั่วคราว ลองใหม่ภายหลัง',
         temp_expired: 'รหัสชั่วคราวหมดอายุแล้ว ทักร้านทาง LINE เพื่อขอรหัสใหม่',
@@ -50,6 +51,7 @@
         password_short: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
         password_long: 'รหัสผ่านยาวเกินไป',
         password_phone: 'ห้ามใช้เบอร์โทรเป็นรหัสผ่าน',
+        password_name: 'ห้ามใช้ชื่อร้านในรหัสผ่าน',
         password_common: 'รหัสนี้เดาง่ายเกินไป ลองใช้คำที่ร้านจำได้ เช่น ชื่อเมนูกับตัวเลข',
         password_same: 'ใช้รหัสชั่วคราวเป็นรหัสผ่านไม่ได้ ตั้งรหัสใหม่',
         network: 'เชื่อมต่อไม่ได้ ตรวจเน็ตแล้วลองใหม่',
@@ -61,7 +63,8 @@
       backToMenu: 'Back to menu',
       loginTitle: 'Shop login',
       loginIntro: 'For shops with a Betagro Shop account. Log in once and order without typing your shop details again.',
-      phone: "Shop's phone number",
+      user: "Shop's phone number or shop name",
+      userHint: 'Either one, e.g. 0812345678 or the shop name we sent you on LINE',
       password: 'Password',
       show: 'Show',
       hide: 'Hide',
@@ -75,22 +78,22 @@
       newIntro: 'The temporary password works once. Choose a password your shop will remember and use it from now on.',
       newPassword: 'New password',
       confirmPassword: 'New password again',
-      rules: 'At least 8 characters. Thai and spaces are fine. Not your phone number, and nothing easy to guess like 12345678.',
+      rules: 'At least 8 characters. Thai and spaces are fine. Not your phone number or shop name, and nothing easy to guess like 12345678.',
       newBtn: 'Save password and log in',
       inTitle: "You're logged in",
       inName: (n) => n,
       toMenu: 'Go to the menu',
       logout: 'Log out',
-      logoutAsk: 'Log your shop out on this phone? You will need your phone number and password next time.',
+      logoutAsk: 'Log your shop out on this phone? You will need your phone number or shop name and password next time.',
       cancel: 'Cancel',
       loggedOut: 'Logged out',
       busyLogin: 'Logging in…',
       busySave: 'Saving…',
       err: {
-        phone: 'Phone needs 9–10 digits starting with 0',
+        user: 'Enter a phone number (9–10 digits starting with 0) or your shop name',
         password: 'Enter your password',
         mismatch: "The two passwords don't match",
-        bad_login: 'Wrong phone number or password',
+        bad_login: 'Wrong phone number, shop name or password',
         locked: 'Too many wrong tries. Try again in 15 minutes, or message us on LINE.',
         rate: 'Login is paused for a while. Please try again later.',
         temp_expired: 'This temporary password has expired. Message us on LINE for a new one.',
@@ -98,6 +101,7 @@
         password_short: 'Use at least 8 characters',
         password_long: 'That password is too long',
         password_phone: "Don't use your phone number as the password",
+        password_name: "Don't put your shop name in the password",
         password_common: 'Too easy to guess. Try something your shop will remember, like a dish name and a number.',
         password_same: "You can't keep the temporary password. Choose a new one.",
         network: "Can't connect. Check your internet and try again.",
@@ -114,7 +118,7 @@
     TEXT[l] = { ...TEXT.en, ...x, err: { ...TEXT.en.err, ...x.err } };
   });
 
-  const state = { lang: pickLanguage(), config: {}, view: 'login', change: '', phone: '', remember: true, busy: false, error: {} };
+  const state = { lang: pickLanguage(), config: {}, view: 'login', change: '', user: '', remember: true, busy: false, error: {} };
   const $ = (id) => document.getElementById(id);
 
   function storageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -231,7 +235,7 @@
     state.view = view;
     state.error = {};
     render();
-    const focus = { login: 'l-phone', new: 'n-password', in: 'v-in' }[view];
+    const focus = { login: 'l-user', new: 'n-password', in: 'v-in' }[view];
     if (focus) $(focus).focus();
   }
 
@@ -239,19 +243,23 @@
   async function onLogin(e) {
     e.preventDefault();
     if (state.busy) return;
-    const phone = $('l-phone').value.replace(/\D/g, '');
+    // The shop's phone or its login name: only digits and separators = a phone (same rule as Member.gs).
+    const user = $('l-user').value.trim();
     const password = $('l-password').value;
     state.error = {};
-    if (!/^0\d{8,9}$/.test(phone)) { state.error.login = 'phone'; render(); $('l-phone').focus(); return; }
+    const isPhone = /^[\d\s\-+().]*$/.test(user);
+    if (!user || (isPhone && !/^0\d{8,9}$/.test(user.replace(/\D/g, '')))) {
+      state.error.login = 'user'; render(); $('l-user').focus(); return;
+    }
     if (!password) { state.error.login = 'password'; render(); $('l-password').focus(); return; }
     setBusy(true);
     state.remember = $('l-remember').checked;
-    const res = await post({ action: 'login', phone, password, remember: state.remember });
+    const res = await post({ action: 'login', user, password, remember: state.remember });
     state.busy = false;
     if (res.ok && res.must_change && /^[0-9a-f]{64}$/.test(res.change_token || '')) {
       state.change = res.change_token;
-      state.phone = phone;
-      $('n-user').value = phone;
+      state.user = user;
+      $('n-user').value = user;
       $('l-password').value = '';
       go('new');
     } else if (res.ok && res.token) {

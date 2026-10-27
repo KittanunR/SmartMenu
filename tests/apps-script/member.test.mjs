@@ -189,6 +189,51 @@ test('too many failed logins across the site pause login for everyone', () => {
   assert.deepEqual(b.login(PHONE, m.password), { ok: false, error: 'rate' });
 });
 
+// ---------- phone or login name (2026-10-27) ----------
+test('a shop logs in with its phone or its login name (capitals and spaces ignored); old pages sending phone still work', () => {
+  const b = ready();
+  const { temp } = b.newShop();                           // login name = shop name "Café Sukhumvit"
+  assert.equal(b.post({ action: 'login', user: 'café sukhumvit', password: temp }).must_change, true, 'temp password by name');
+  const m = { password: 'mango-sticky-rice' };
+  b.setPassword(b.post({ action: 'login', user: PHONE, password: temp }).change_token, m.password);
+  for (const user of ['Café Sukhumvit', 'CAFÉSUKHUMVIT', ' café  sukhumvit ', PHONE, '081-234-5678']) {
+    assert.equal(b.post({ action: 'login', user, password: m.password }).ok, true, user);
+  }
+  assert.equal(b.login(PHONE, m.password).ok, true, '{ phone } from a cached old page');
+});
+
+test('a wrong or unknown name gets the same answer as a wrong password', () => {
+  const b = ready();
+  const m = b.member();
+  const same = { ok: false, error: 'bad_login' };
+  assert.deepEqual(b.post({ action: 'login', user: 'Nobody Shop', password: m.password }), same);
+  assert.deepEqual(b.post({ action: 'login', user: 'Café Sukhumvit', password: 'wrong-password' }), same);
+  assert.deepEqual(b.post({ action: 'login', user: 'Café', password: m.password }), same, 'part of the name is not enough');
+  assert.deepEqual(b.post({ action: 'login', user: '   ', password: m.password }), same);
+  assert.deepEqual(b.post({ action: 'login', user: 'x'.repeat(201), password: m.password }), same);
+});
+
+test('5 wrong tries lock the account, mixing phone and name; another shop is untouched', () => {
+  const b = ready();
+  const m = b.member();
+  const other = b.member({ name: 'B Shop', phone: '0822222222' }, 'papaya-salad-77');
+  for (let i = 0; i < 3; i++) b.login(PHONE, 'wrong-' + i);
+  for (let i = 0; i < 2; i++) b.post({ action: 'login', user: 'café sukhumvit', password: 'wrong-x' + i });
+  assert.deepEqual(b.post({ action: 'login', user: 'Café Sukhumvit', password: m.password }), { ok: false, error: 'locked' });
+  assert.deepEqual(b.login(PHONE, m.password), { ok: false, error: 'locked' });
+  assert.equal(b.post({ action: 'login', user: 'b shop', password: other.password }).ok, true);
+});
+
+test('the new password may not contain the login name', () => {
+  const b = ready();
+  const { temp } = b.newShop({ login: 'Hotpotman' });
+  const change = b.login(PHONE, temp).change_token;
+  for (const pw of ['hotpotman', 'HotPotMan-2026', 'my hot pot man']) {
+    assert.deepEqual(b.setPassword(change, pw), { ok: false, error: 'password_name' }, pw);
+  }
+  assert.equal(b.setPassword(change, 'mango-sticky-rice').ok, true);
+});
+
 // ---------- me / logout / session lifetime ----------
 test('me answers the shop for a good token, with masked phone and address', () => {
   const b = ready();

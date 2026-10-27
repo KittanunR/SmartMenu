@@ -98,25 +98,45 @@ class FakeBlob {
   getName() { return this.name; }
 }
 
-/** Drive: folders and files in memory. `files` is exposed so tests can look at what was saved or trashed. */
+/**
+ * Drive: folders and files in memory. `files` / `folders` are exposed so tests can look at what was saved, moved or
+ * trashed. `addFile(id, name, folderId)` puts an existing file (e.g. the spreadsheet itself) into a folder.
+ */
 function fakeDrive() {
   const files = new Map();
   const folders = new Map();
   let n = 0;
-  const file = (blob, folderId) => {
-    const id = `file${++n}`;
-    const f = { id, blob, folderId, trashed: false, getId: () => id, getBlob: () => blob, setTrashed(v) { f.trashed = v; return f; } };
+  const iter = (list) => { let i = 0; return { hasNext: () => i < list.length, next: () => list[i++] }; };
+  const file = (blob, folderId, fixedId, fixedName) => {
+    const id = fixedId || `file${++n}`;
+    const f = {
+      id, blob, folderId, trashed: false, getId: () => id, getBlob: () => blob,
+      getName: () => fixedName || blob.getName(),
+      getParents: () => iter(folders.has(f.folderId) ? [folders.get(f.folderId)] : []),
+      moveTo(folder) { f.folderId = folder.getId(); return f; },
+      setTrashed(v) { f.trashed = v; return f; },
+    };
     files.set(id, f);
     return f;
   };
-  const folder = (name) => {
+  const folder = (name, parentId = 'root') => {
     const id = `folder${++n}`;
-    const f = { id, name, getId: () => id, createFile: blob => file(blob, id) };
+    const f = {
+      id, name, parentId, getId: () => id, getName: () => name,
+      createFile: blob => file(blob, id),
+      createFolder: child => folder(child, id),
+      getFoldersByName: child => iter([...folders.values()].filter(x => x.parentId === id && x.name === child)),
+    };
     folders.set(id, f);
     return f;
   };
   const get = (map, id) => { if (!map.has(id)) throw new Error(`No item with the given ID could be found: ${id}`); return map.get(id); };
-  return { files, folders, api: { createFolder: folder, getFolderById: id => get(folders, id), getFileById: id => get(files, id) } };
+  const root = folder('My Drive', null);
+  return {
+    files, folders, root,
+    addFile: (id, name, folderId) => file(null, folderId, id, name),
+    api: { createFolder: name => folder(name, root.id), getRootFolder: () => root, getFolderById: id => get(folders, id), getFileById: id => get(files, id) },
+  };
 }
 
 /**
@@ -162,6 +182,11 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Memb
   });
   for (const f of files) {
     new Script(readFileSync(join(ROOT, 'backend', 'apps-script', f), 'utf8'), { filename: f }).runInContext(ctx);
+  }
+  // The spreadsheet itself sits in the AppSheet app's data folder, as in the real sandbox.
+  if (files.includes('Code.gs')) {
+    const appFolder = drive.api.createFolder('SmartMenuSandboxDIFOT-93916087');
+    drive.addFile(new Script('SHEET_ID').runInContext(ctx), 'DIFOT sandbox', appFolder.getId());
   }
   const post = body => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent());
   return { ctx, ss, cache, post, sheet: n => ss.getSheetByName(n), drive, properties, session };

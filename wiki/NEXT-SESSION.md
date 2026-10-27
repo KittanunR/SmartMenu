@@ -1,4 +1,25 @@
-# Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-23 night)
+# Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-24 end of day)
+
+## 2026-10-27 — login by phone OR shop name: built, waiting for Petch's rollout
+Local only (also carries the unpushed AppSheet-logo changes). Rollout, Apps Script FIRST:
+1. Apps Script: replace Code.gs, AdminServer.gs (= repo Admin.gs), Admin.html, Member.gs. sha256 starts: Code.gs 8da10b9e6800, Admin.gs 50788157fc56, Admin.html 4a7ecf90c956, Member.gs e35669b98d32.
+2. Run setup() → Member_Auth gets column Login_Name (far right). Member_Auth is NOT in AppSheet → nothing to regenerate.
+3. Deploy → order deployment (AKfycbyCWF…) → New version "v13 login by name"; Admin deployment → New version too.
+4. Admin page → แก้ไข CUS-W008 (and any other existing account) → leave ชื่อเข้าระบบ empty → บันทึก = login name becomes the shop name.
+5. GitHub Desktop: commit "Login by phone or shop name + AppSheet logos" + push → Actions ✓, live ?v=2026-10-27a.
+6. iPhone: log in with the shop name, then with the phone.
+
+## End of day 2026-10-24 — read first
+LIVE: member accounts Phases 0–5 (login, logo card, History, weekly analytics, remember-me, logout confirm; Apps Script v11) and six languages (commit 128d3d0, ?v=2026-10-24e; iPhone check of the languages not reported yet). Everything still writes to the SANDBOX sheet.
+
+Petch's to-do, in order:
+1. Check the six languages on iPhone (🌐 picker: menu, cart, History).
+2. **By Fri 30/10:** send the new price sheet + "อัปราคา" (prices end 30/10; ordering closes itself on 31/10).
+3. Send `Smart menu/translation-review/SmartMenu-translation-review-2026-10-24.xlsx` to one native speaker per language; bring replies back → Claude updates data/catalog.json name_*.
+4. Ask the Betagro team: PK-004 ขั้วตับ, PK-025 กระดูกแว่นตา, CK-021 tender vs tendon, CK-024 "มีเครื่องใน", PK-031 hock vs trotter, CK-023 NY, CK-015 bone-in?; plus SAP 1000053261 twice and คอหมู ฿357.
+5. Go-live decisions: real DIFOT sheet (with the teammate), PDPA wording (Betagro), or clean the sandbox test data.
+6. Pilot with 2–3 real shops.
+Claude's advice (2026-10-24): no new features until the pilot starts.
 
 ## Latest (2026-10-23 night) — read first: Member accounts project
 Petch is building optional shop accounts (Guest vs Member). Full spec, decisions and dated log: **[member-accounts.md](member-accounts.md)** — read it before touching code. Work one phase at a time; end each phase with "what changed + how to test"; Petch does every Apps Script / AppSheet / GitHub click himself.
@@ -12,7 +33,8 @@ Petch is building optional shop accounts (Guest vs Member). Full spec, decisions
 | 2 | Admin page | DEPLOYED 2026-10-23 20:25 (commit abe29f7, Actions #15 ✓). Order deployment = Version 6 (same /exec, still answers JSON); Admin deployment = Version 7 "SmartMenu Admin", Execute as Me, Only myself (URL kept by Petch, not in repo). setup() ran, Admin_Log exists. Formula guard checked live: order W261023-012 with "=1+1…", "+Test", "@note" stored as text. Admin page TESTED by Petch 2026-10-23 (single-account window): works. |
 | 3 | Login + branding | DONE 2026-10-24 — iPhone test passed (Petch); shop card redesign pushed as 7099758. DEPLOYED 2026-10-23 23:45. Apps Script Code.gs / AdminServer.gs / Admin.html / Member.gs match the repo (sha256 checked), TempAuth removed. Order deployment = Version 8 "v8 Phase 3 shop login" (same /exec, answers JSON; `me` with a fake token → {ok:false,error:"session"}); Admin deployment = Version 9 (same ID). Commit 67f7d2b, Actions #16 ✓, live site ?v=2026-10-24a, member.html 200. Built: Member.gs (login / set_password / me / logout, member orders), member.html + member.js, app.js (cover logo + name, login/logout link, orders carry session), CSP on index.html + member.html, Admin message gets the login link. 64 tests. Rollout steps below. |
 | 4 | Order History | DONE — Apps Script v10, site e80d992 (2026-10-24) — Member.gs `history`, history.html + history.js, menu link + order again. 70 tests. Rollout steps below. |
-| 6 langs | Japanese, Chinese, Korean, Hindi (+ English under product names) | BUILT, LOCAL, NOT PUSHED (2026-10-24, ?v=2026-10-24e) — site only; see design-feedback.md. Push: commit "Six languages: Japanese, Chinese, Korean, Hindi". |
+| DIFOT | Sandbox app fixed + system columns read-only + member logos in ออเดอร์ทั้งหมด (2026-10-27, Apps Script v12) | see difot-step-flow.md. Repo changes (Code.gs, Admin.gs, tests) still to push. |
+| 6 langs | Japanese, Chinese, Korean, Hindi (+ English under product names) | LIVE 2026-10-24 (commit 128d3d0, ?v=2026-10-24e) — site only; see design-feedback.md. Translations unreviewed (review xlsx sent out). |
 | 5 | Analytics + remember me + logout confirm | DONE 2026-10-24 — Apps Script v11, site 6a22212, iPhone-tested by Petch (?v=2026-10-24d) — see member-accounts.md. 72 tests. Rollout below. |
 
 **Decided (don't re-ask):** guest keeps ordering as today · Shop QR = ordering only, never History · login = phone + password · admin creates shop → random temp password shown once (bcrypt hash only, 7 days) → forced change at first login · forgot = admin presses reset (old password + all sessions die) · no invite QR in v1 · Admin = web page (Claude's plan: Apps Script HtmlService, Google-account protected, not on Pages).

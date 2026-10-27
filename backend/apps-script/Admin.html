@@ -105,6 +105,8 @@
     <h2 id="shop-title">เพิ่มร้าน</h2>
     <label><span>ชื่อร้าน <b>*</b></span><input id="f-name" maxlength="120" required autocomplete="off"></label>
     <label><span>เบอร์โทร (ใช้เข้าระบบ) <b>*</b></span><input id="f-phone" inputmode="tel" maxlength="14" required autocomplete="off" placeholder="0812345678"></label>
+    <!-- Login name (2026-10-27): the shop may log in with this instead of the phone. Empty = the shop name. -->
+    <label><span>ชื่อเข้าระบบ (ใช้แทนเบอร์ได้)</span><input id="f-login" maxlength="120" autocomplete="off" placeholder="เว้นว่าง = ใช้ชื่อร้าน"></label>
     <label>ชื่อผู้ติดต่อ<input id="f-contact" maxlength="120" autocomplete="off"></label>
     <label>ชื่อ LINE<input id="f-line" maxlength="120" autocomplete="off"></label>
     <label>ที่อยู่จัดส่ง<textarea id="f-address" maxlength="400"></textarea></label>
@@ -173,6 +175,8 @@
     line: 'ชื่อ LINE ยาวเกิน 120 ตัวอักษร',
     address: 'ที่อยู่ยาวเกิน 400 ตัวอักษร',
     phone_taken: 'เบอร์นี้เป็นของลูกค้า {id} อยู่แล้ว ถ้าเป็นร้านเดียวกันให้ค้นหา {id} แล้วกด "สร้างบัญชี" แทน',
+    login_name: 'ชื่อเข้าระบบต้องมีตัวหนังสือ (ใช้ตัวเลขล้วนไม่ได้ เพราะจะซ้ำกับเบอร์) และไม่เกิน 120 ตัวอักษร',
+    login_taken: 'ชื่อเข้าระบบนี้ร้าน {id} ใช้อยู่แล้ว ตั้งชื่ออื่นในช่อง "ชื่อเข้าระบบ" เช่น เติมชื่อสาขา',
     not_found: 'ไม่พบลูกค้ารายนี้ ลองกดโหลดใหม่',
     no_account: 'ร้านนี้ยังไม่มีบัญชี',
     logo_type: 'ไฟล์ต้องเป็นรูป PNG, JPG หรือ WEBP',
@@ -243,6 +247,7 @@
     const q = $('search').value.trim().toLowerCase();
     const qDigits = q.replace(/\D/g, '');
     const shown = state.shops.filter(s => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
+      || (s.login_name || '').toLowerCase().includes(q)
       || (qDigits.length >= 3 && s.phone.includes(qDigits)));
     const members = state.shops.filter(s => s.account !== 'none').length;
     $('count').textContent = `ลูกค้า ${state.shops.length} ร้าน · มีบัญชี ${members} ร้าน` + (q ? ` · ตรงกับคำค้น ${shown.length}` : '');
@@ -265,7 +270,8 @@
     top.append(who, chips);
     c.append(top);
 
-    const meta = [phoneTh(s.phone), s.contact, s.line && 'LINE: ' + s.line].filter(Boolean).join(' · ');
+    const meta = [phoneTh(s.phone), s.login_name && 'เข้าระบบ: ' + s.login_name, s.contact, s.line && 'LINE: ' + s.line]
+      .filter(Boolean).join(' · ');
     if (meta) c.append(el('div', 'card__meta', meta));
     if (s.address) c.append(el('div', 'card__meta', s.address));
 
@@ -301,6 +307,7 @@
     $('shop-title').textContent = s ? 'แก้ไขร้าน ' + s.id : 'เพิ่มร้าน';
     $('f-name').value = s ? s.name : '';
     $('f-phone').value = s ? s.phone : '';
+    $('f-login').value = s ? s.login_name || '' : '';
     $('f-contact').value = s ? s.contact : '';
     $('f-line').value = s ? s.line : '';
     $('f-address').value = s ? s.address : '';
@@ -330,16 +337,21 @@
   async function saveShop(e) {
     e.preventDefault();
     const form = {
-      name: $('f-name').value, phone: $('f-phone').value, contact: $('f-contact').value,
+      name: $('f-name').value, phone: $('f-phone').value, login: $('f-login').value, contact: $('f-contact').value,
       line: $('f-line').value, address: $('f-address').value, active: $('f-active').checked,
     };
     // Quick checks here; the server checks everything again.
     if (!form.name.trim()) return formErr(ERR.name, 'name');
     if (!/^0\d{8,9}$/.test(form.phone.replace(/\D/g, ''))) return formErr(ERR.phone, 'phone');
+    if (form.login.trim() && /^[\d\s\-+().]*$/.test(form.login)) return formErr(ERR.login_name, 'login');
     const s = state.editing;
     const res = await run(s ? 'กำลังบันทึก' : 'กำลังสร้างร้านและรหัสผ่าน', () => (s ? call('adminUpdateShop', s.id, form) : call('adminCreateShop', form)));
     if (!res) return;
-    if (!res.ok) { $('toast').hidden = true; return formErr(errText(res), ['name', 'phone', 'contact', 'line', 'address'].indexOf(res.error) !== -1 ? res.error : (res.error === 'phone_taken' ? 'phone' : '')); }
+    if (!res.ok) {
+      $('toast').hidden = true;
+      const field = { phone_taken: 'phone', login_name: 'login', login_taken: 'login' }[res.error];
+      return formErr(errText(res), field || (['name', 'phone', 'contact', 'line', 'address'].indexOf(res.error) !== -1 ? res.error : ''));
+    }
     $('dlg-shop').close();
     replaceShop(res.shop);
     if (res.temp_password) { $('toast').hidden = true; showSecret(res.shop, res.temp_password, res.login_url); }
@@ -436,7 +448,8 @@
     $('secret').textContent = temp;
     $('secret-msg').textContent = [
       'บัญชี SmartMenu ของร้าน ' + shop.name,
-      'เบอร์เข้าระบบ: ' + shop.phone,
+      'เข้าระบบด้วยเบอร์: ' + shop.phone,
+      shop.login_name ? 'หรือชื่อร้าน: ' + shop.login_name : '',
       'รหัสผ่านชั่วคราว: ' + temp,
       'ใช้ได้ถึง: ' + dateTh(shop.temp_expires_at),
       'เข้าครั้งแรกระบบจะให้ตั้งรหัสผ่านใหม่ของร้านเอง',

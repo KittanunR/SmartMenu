@@ -13,7 +13,9 @@ const TEMP_DAYS = 7;
 const TEMP_LENGTH = 10;              // from CODE_ALPHABET ≈ 49 bits; shown as XXXXX-XXXXX, the dash is not part of it
 const LOGO_MAX_BYTES = 300 * 1024;   // the page shrinks logos to 512 px before upload, so this is generous
 const LOGO_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+const LOGO_SUBFOLDER = 'Master_Images';   // next to the sheet; AppSheet's own name for a Master table's images
 const DAY_MS = 24 * 3600 * 1000;
+const LOGIN_NAME_MAX = 120;          // same as a shop name, which is the default login name
 
 /**
  * The caller's email if they may use the admin page, else ''. Allowed: the script owner, plus anyone listed in the
@@ -63,8 +65,11 @@ function adminCreateShop(form) {
     if (c.error) return { ok: false, error: c.error };
     const f = c.shop;
     const m = table_(ss.getSheetByName('Master'));
-    const taken = phoneOwner_(m, table_(ss.getSheetByName('Member_Auth')), f.phone, '');
+    const auth = table_(ss.getSheetByName('Member_Auth'));
+    const taken = phoneOwner_(m, auth, f.phone, '');
     if (taken) return { ok: false, error: 'phone_taken', customer_id: taken };
+    const nameTaken = f.login && loginOwner_(auth, f.login, '');
+    if (nameTaken) return { ok: false, error: 'login_taken', customer_id: nameTaken };
     const id = nextCustomerCode_([m.head].concat(m.rows));
     const code = uniqueShopCode_(m);
     appendByHeader_(m.sheet, {
@@ -73,7 +78,7 @@ function adminCreateShop(form) {
       LINE_Name: f.line, Shop_Code: code, Shop_Link: SITE_URL + '?shop=' + code, Member_Status: 'active'
     });
     const now = new Date();
-    const temp = setTempPassword_(ss, id, f.phone, now);
+    const temp = setTempPassword_(ss, id, f.phone, f.login, now);
     log_(ss, who, 'shop_created', id, f.name, now);
     return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp, login_url: SITE_URL + 'member.html' };
   });
@@ -90,10 +95,13 @@ function adminUpdateShop(id, form) {
     const auth = table_(ss.getSheetByName('Member_Auth'));
     const taken = phoneOwner_(m, auth, f.phone, id);
     if (taken) return { ok: false, error: 'phone_taken', customer_id: taken };
+    const a = auth.find('Customer_ID', id);
+    const nameTaken = a !== -1 && f.login && loginOwner_(auth, f.login, id);
+    if (nameTaken) return { ok: false, error: 'login_taken', customer_id: nameTaken };
     m.set(r, { Name: f.name, Phone: "'" + f.phone, Contact_Name: f.contact, LINE_Name: f.line,
       Address: f.address, Active: f.active ? 'Yes' : 'No' });
-    const a = auth.find('Customer_ID', id);
-    if (a !== -1) auth.set(a, { Login_Phone: "'" + f.phone });
+    // A shop without an account has nowhere to keep a login name yet; it gets one when its password is issued.
+    if (a !== -1) auth.set(a, { Login_Phone: "'" + f.phone, Login_Name: f.login });
     log_(ss, who, 'shop_updated', id, '', new Date());
     return { ok: true, shop: shopViews_(ss, id)[0] };
   });
@@ -107,8 +115,17 @@ function adminIssuePassword(id) {
     if (r === -1) return { ok: false, error: 'not_found' };
     const phone = digits_(m.get(r, 'Phone'));
     if (!/^0\d{8,9}$/.test(phone)) return { ok: false, error: 'phone' };
-    const taken = phoneOwner_(m, table_(ss.getSheetByName('Member_Auth')), phone, id);
+    const auth = table_(ss.getSheetByName('Member_Auth'));
+    const taken = phoneOwner_(m, auth, phone, id);
     if (taken) return { ok: false, error: 'phone_taken', customer_id: taken };
+    // Keep the login name it has; a first account gets the shop name, unless another shop already logs in with it
+    // (then phone only until the admin page gives it a name).
+    const a = auth.find('Customer_ID', id);
+    let login = a === -1 ? '' : auth.str(a, 'Login_Name');
+    if (!login) {
+      login = defaultLoginName_(m.str(r, 'Name'));
+      if (login && loginOwner_(auth, login, id)) login = '';
+    }
     // A guest customer has no shop code yet; a member gets one so staff can also give it a QR.
     if (!m.str(r, 'Shop_Code')) {
       const code = uniqueShopCode_(m);
@@ -116,7 +133,7 @@ function adminIssuePassword(id) {
     }
     m.set(r, { Member_Status: 'active' });
     const now = new Date();
-    const temp = setTempPassword_(ss, id, phone, now);
+    const temp = setTempPassword_(ss, id, phone, login, now);
     log_(ss, who, 'password_issued', id, '', now);
     return { ok: true, shop: shopViews_(ss, id)[0], temp_password: temp, login_url: SITE_URL + 'member.html' };
   });
@@ -140,7 +157,10 @@ function adminDisableAccount(id) {
   });
 }
 
-/** logo = { mime, base64 } (no data: prefix). Saved in a private Drive folder; the old logo goes to the bin. */
+/**
+ * logo = { mime, base64 } (no data: prefix). Saved privately in Master_Images next to the sheet, so the DIFOT
+ * AppSheet app can show it from Master.Logo_Image (a path relative to the sheet's folder); the old logo goes to the bin.
+ */
 function adminSetLogo(id, logo) {
   return adminCall_((ss, who) => {
     const m = table_(ss.getSheetByName('Master'));
@@ -154,9 +174,11 @@ function adminSetLogo(id, logo) {
     const bytes = Utilities.base64Decode(b64);
     if (bytes.length > LOGO_MAX_BYTES) return { ok: false, error: 'logo_size' };
     if (!isImage_(bytes, l.mime)) return { ok: false, error: 'logo_type' };
-    const file = logoFolder_().createFile(Utilities.newBlob(bytes, l.mime, id + '-logo.' + ext));
+    // A new name per upload: AppSheet caches images by path.
+    const name = id + '-logo-' + Utilities.formatDate(new Date(), TZ, 'yyMMddHHmmss') + '.' + ext;
+    const file = logoFolder_().createFile(Utilities.newBlob(bytes, l.mime, name));
     const old = m.str(r, 'Logo_File_ID');
-    m.set(r, { Logo_File_ID: file.getId() });
+    m.set(r, { Logo_File_ID: file.getId(), Logo_Image: LOGO_SUBFOLDER + '/' + name });
     if (old) {
       try { DriveApp.getFileById(old).setTrashed(true); } catch (err) { console.error(err); }
     }
@@ -212,13 +234,19 @@ const isDate_ = v => !!v && typeof v.getTime === 'function';
 const iso_ = v => (isDate_(v) ? v.toISOString() : '');
 const isTrue_ = v => v === true || String(v).toUpperCase() === 'TRUE';
 
-/** Form → clean fields, or { error: field }. Phone is the login, so it is required. */
+/**
+ * Form → clean fields, or { error: field }. Phone is a login, so it is required. The login name (2026-10-27) is the
+ * shop name when left empty; it must not look like a phone number, or the login page would read it as one.
+ */
 function cleanShop_(form) {
   const f = form && typeof form === 'object' ? form : {};
   const s = v => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
   const shop = { name: s(f.name), phone: digits_(f.phone), contact: s(f.contact), line: s(f.line), address: s(f.address),
     active: f.active !== false };
   if (!shop.name || shop.name.length > 120) return { error: 'name' };
+  const login = s(f.login);
+  if (login && (login.length > LOGIN_NAME_MAX || looksLikePhone_(login))) return { error: 'login_name' };
+  shop.login = login || defaultLoginName_(shop.name);
   if (!/^0\d{8,9}$/.test(shop.phone)) return { error: 'phone' };
   if (shop.contact.length > 120) return { error: 'contact' };
   if (shop.line.length > 120) return { error: 'line' };
@@ -239,6 +267,22 @@ function phoneOwner_(m, auth, phone, exceptId) {
   return '';
 }
 
+// What the login page treats as a phone number: digits and the usual separators only.
+const looksLikePhone_ = v => /^[\d\s\-+().]*$/.test(String(v));
+const defaultLoginName_ = name => (looksLikePhone_(name) ? '' : name);
+/** Login names match ignoring capitals, spaces and zero-width characters ("Hot Pot Man" = "hotpotman"). */
+const loginKey_ = v => String(v == null ? '' : v).normalize('NFC').toLowerCase().replace(/[\s\u200b-\u200d\ufeff]+/g, '');
+
+/** Another customer logging in with this name, or ''. */
+function loginOwner_(auth, name, exceptId) {
+  const key = loginKey_(name);
+  for (let r = 0; r < auth.rows.length; r++) {
+    const id = auth.str(r, 'Customer_ID');
+    if (id !== exceptId && key && loginKey_(auth.get(r, 'Login_Name')) === key) return id;
+  }
+  return '';
+}
+
 function uniqueShopCode_(m) {
   const used = {};
   m.rows.forEach((row, r) => { used[m.str(r, 'Shop_Code')] = true; });
@@ -248,9 +292,10 @@ function uniqueShopCode_(m) {
 }
 
 /** New random temporary password: bcrypt hash into Member_Auth (row added or replaced), every session revoked. */
-function setTempPassword_(ss, id, phone, now) {
+function setTempPassword_(ss, id, phone, login, now) {
   const temp = randomCode_(TEMP_LENGTH);
-  const values = { Customer_ID: id, Login_Phone: "'" + phone, Password_Hash: bcrypt_.hashSync(temp, BCRYPT_COST),
+  const values = { Customer_ID: id, Login_Phone: "'" + phone, Login_Name: login,
+    Password_Hash: bcrypt_.hashSync(temp, BCRYPT_COST),
     Must_Change: true, Temp_Expires_At: new Date(now.getTime() + TEMP_DAYS * DAY_MS), Password_Set_At: '' };
   const auth = table_(ss.getSheetByName('Member_Auth'));
   const a = auth.find('Customer_ID', id);
@@ -303,7 +348,8 @@ function shopViews_(ss, onlyId) {
       id, name: m.str(r, 'Name'), phone: digits_(m.get(r, 'Phone')), contact: m.str(r, 'Contact_Name'),
       line: m.str(r, 'LINE_Name'), address: m.str(r, 'Address'), active: !isInactive_(m.get(r, 'Active')),
       shop_code: m.str(r, 'Shop_Code'), shop_link: m.str(r, 'Shop_Link'), has_logo: !!m.str(r, 'Logo_File_ID'),
-      account, temp_expires_at: a === -1 ? '' : iso_(auth.get(a, 'Temp_Expires_At')),
+      account, login_name: a === -1 ? '' : auth.str(a, 'Login_Name'),
+      temp_expires_at: a === -1 ? '' : iso_(auth.get(a, 'Temp_Expires_At')),
       password_set_at: a === -1 ? '' : iso_(auth.get(a, 'Password_Set_At'))
     });
   });
@@ -319,14 +365,40 @@ function isImage_(bytes, mime) {
   return false;
 }
 
-/** Private Drive folder for logos (made on first upload, id kept in the script property LOGO_FOLDER_ID). */
+/**
+ * Logos live in <folder of the sheet>/Master_Images (2026-10-27): AppSheet finds an Image column's file by a path
+ * relative to the sheet's folder, using the owner's own Drive access, so nothing has to be shared. Made on first use.
+ * (Before 2026-10-27 logos went to a separate private folder, script property LOGO_FOLDER_ID; see moveLogosForAppSheet.)
+ */
 function logoFolder_() {
-  const props = PropertiesService.getScriptProperties();
-  const id = props.getProperty('LOGO_FOLDER_ID');
-  if (id) {
-    try { return DriveApp.getFolderById(id); } catch (err) { console.error(err); } // folder deleted: make a new one
-  }
-  const folder = DriveApp.createFolder('SmartMenu shop logos (private)');
-  props.setProperty('LOGO_FOLDER_ID', folder.getId());
-  return folder;
+  const parents = DriveApp.getFileById(SHEET_ID).getParents();
+  const home = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  const found = home.getFoldersByName(LOGO_SUBFOLDER);
+  return found.hasNext() ? found.next() : home.createFolder(LOGO_SUBFOLDER);
+}
+
+/**
+ * Run by hand once after setup() (2026-10-27): logos uploaded earlier sit in the old private folder. Moves each into
+ * Master_Images and fills Master.Logo_Image so the DIFOT app shows it. Rows already done are skipped; safe to re-run.
+ */
+function moveLogosForAppSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const m = table_(ss.getSheetByName('Master'));
+  const folder = logoFolder_();
+  let moved = 0;
+  m.rows.forEach((row, r) => {
+    const fileId = m.str(r, 'Logo_File_ID');
+    if (!fileId || m.str(r, 'Logo_Image')) return;
+    try {
+      const file = DriveApp.getFileById(fileId);
+      file.moveTo(folder);
+      m.set(r, { Logo_Image: LOGO_SUBFOLDER + '/' + file.getName() });
+      moved++;
+    } catch (err) {
+      console.error(m.str(r, 'Code') + ': ' + err);
+    }
+  });
+  const home = DriveApp.getFileById(SHEET_ID).getParents();
+  console.log(moved + ' logo(s) moved to ' + (home.hasNext() ? home.next().getName() : 'My Drive') + '/' + LOGO_SUBFOLDER);
+  return moved;
 }

@@ -17,14 +17,16 @@ const LIMIT_PER_PHONE = 5;         // orders per phone per hour
 const LIMIT_ALL = 40;              // orders per hour from the whole site (stops a flood filling the sheet)
 const DEDUPE_SCAN_ROWS = 500;      // recent Order rows checked for a repeated client_order_id
 const MASTER_EXTRA_COLS = ['Phone', 'Source', 'Address', 'Contact_Name', 'LINE_Name', 'Shop_Code', 'Shop_Link',
-  'Logo_File_ID', 'Member_Status'];
+  'Logo_File_ID', 'Member_Status', 'Logo_Image'];
 // Shop codes: no 0/O, 1/I/L, so a code read off a sticker is never ambiguous. 10 chars ≈ 49 bits.
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 10;
 const LIMIT_BAD_CODES = 60;        // wrong shop codes per hour from the whole site, then lookups pause
 const ITEM_COLS = ['Item_ID', 'Order_ID', 'SKU', 'Name_TH', 'Qty', 'Qty_Unit', 'Unit_Price', 'Line_Total', 'Category'];
 // Shop accounts. Password_Hash is bcrypt only; no password, temporary or chosen, is ever written anywhere.
-const AUTH_COLS = ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At'];
+// Login_Name (2026-10-27): a shop may log in with its phone or this name; added at the far right on older sheets.
+const AUTH_COLS = ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At',
+  'Login_Name'];
 const SESSION_COLS = ['Token_Hash', 'Customer_ID', 'Created_At', 'Expires_At', 'Last_Seen', 'Revoked_At'];
 // Who changed which shop in the admin page (Admin.gs). Never holds a password.
 const ADMIN_LOG_COLS = ['Timestamp', 'User', 'Action', 'Customer_ID', 'Note'];

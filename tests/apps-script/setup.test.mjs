@@ -7,7 +7,7 @@ test('setup adds the account tabs with their columns', () => {
   const { ctx, sheet } = loadBackend();
   ctx.setup();
   assert.deepEqual(sheet('Member_Auth').header(),
-    ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At']);
+    ['Customer_ID', 'Login_Phone', 'Password_Hash', 'Must_Change', 'Temp_Expires_At', 'Password_Set_At', 'Login_Name']);
   assert.deepEqual(sheet('Sessions').header(),
     ['Token_Hash', 'Customer_ID', 'Created_At', 'Expires_At', 'Last_Seen', 'Revoked_At']);
 });
