@@ -1,13 +1,12 @@
 # Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-24 end of day)
 
-## 2026-10-27 — login by phone OR shop name: built, waiting for Petch's rollout
-Local only (also carries the unpushed AppSheet-logo changes). Rollout, Apps Script FIRST:
-1. Apps Script: replace Code.gs, AdminServer.gs (= repo Admin.gs), Admin.html, Member.gs. sha256 starts: Code.gs 8da10b9e6800, Admin.gs 50788157fc56, Admin.html 4a7ecf90c956, Member.gs e35669b98d32.
-2. Run setup() → Member_Auth gets column Login_Name (far right). Member_Auth is NOT in AppSheet → nothing to regenerate.
-3. Deploy → order deployment (AKfycbyCWF…) → New version "v13 login by name"; Admin deployment → New version too.
-4. Admin page → แก้ไข CUS-W008 (and any other existing account) → leave ชื่อเข้าระบบ empty → บันทึก = login name becomes the shop name.
-5. GitHub Desktop: commit "Login by phone or shop name + AppSheet logos" + push → Actions ✓, live ?v=2026-10-27a.
-6. iPhone: log in with the shop name, then with the phone.
+## 2026-10-27 — login by phone OR shop name: LIVE on Apps Script, push + iPhone test left
+Done by Claude (Petch asked "ทำให้หน่อย"): Apps Script files replaced (sha256 = repo), setup() ran (Login_Name added),
+order + Admin deployments on Version 13, CUS-W008 saved in the admin page → "เข้าระบบ: <shop name>".
+Commit 3755e82 made locally; git push from Claude waited on a GitHub sign-in window, so it was cancelled.
+Petch's to-do:
+1. GitHub Desktop → Push origin (1–2 commits) → Actions ✓ → live ?v=2026-10-27a.
+2. iPhone: member.html → log in with the shop name (any capitals), then log out and log in with the phone.
 
 ## End of day 2026-10-24 — read first
 LIVE: member accounts Phases 0–5 (login, logo card, History, weekly analytics, remember-me, logout confirm; Apps Script v11) and six languages (commit 128d3d0, ?v=2026-10-24e; iPhone check of the languages not reported yet). Everything still writes to the SANDBOX sheet.
