@@ -28,7 +28,7 @@
       "name_hi": "पोर्क रीढ़ की हड्डी (AQ)",
       "unit": "kg",
       "image": "assets/products/PK-002.webp",
-      "photo_match": "close",
+      "photo_match": "similar",
       "active": true
     },
     {
@@ -43,7 +43,7 @@
       "name_hi": "पोर्क रीढ़ की हड्डी (AN)",
       "unit": "kg",
       "image": "assets/products/PK-003.webp",
-      "photo_match": "close",
+      "photo_match": "similar",
       "active": true
     },
     {

@@ -1,11 +1,11 @@
 # Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-24 end of day)
 
-## 2026-10-27 — login by phone OR shop name: LIVE on Apps Script, push + iPhone test left
+## 2026-10-27 — login by phone OR shop name: LIVE (Apps Script v13 + site ?v=2026-10-27a), iPhone test left
 Done by Claude (Petch asked "ทำให้หน่อย"): Apps Script files replaced (sha256 = repo), setup() ran (Login_Name added),
 order + Admin deployments on Version 13, CUS-W008 saved in the admin page → "เข้าระบบ: <shop name>".
 Commit 3755e82 made locally; git push from Claude waited on a GitHub sign-in window, so it was cancelled.
 Petch's to-do:
-1. GitHub Desktop → Push origin (1–2 commits) → Actions ✓ → live ?v=2026-10-27a.
+1. DONE — Petch pushed 3755e82 + 427e9cd; Actions "validate and deploy" ✓; live member.html checked (new field, ?v=2026-10-27a).
 2. iPhone: member.html → log in with the shop name (any capitals), then log out and log in with the phone.
 
 ## End of day 2026-10-24 — read first
