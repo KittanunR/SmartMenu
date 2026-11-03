@@ -630,10 +630,23 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
 .history-page .member__help:empty { display: none; }
 
 /* ---------- report a problem (2026-11-03): history.html, a bottom sheet like the menu's ---------- */
-.hist__issue { margin-top: var(--s2); font-size: var(--t12); color: var(--alert); }
-.hist__complain { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s3); }
-.hist__complain .text-btn { margin-top: var(--s1); padding: 0; }
-.hist__until { font-size: var(--t12); color: var(--grey); }
+.hist__top { flex-wrap: wrap; row-gap: var(--s2); }
+.hist__state { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--s2); margin-left: auto; }
+/* Red, boxed, next to the status: the shop must see at a glance that it can report a problem. */
+.complain-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px;
+  border: 1.5px solid #D93025; border-radius: 8px; background: #FDECEA; color: #C5221F;
+  font: 600 var(--t14)/1 var(--text); white-space: nowrap; cursor: pointer;
+}
+.complain-btn::before {   /* "!" in a red circle */
+  content: "!"; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
+  background: #D93025; color: #fff; font: 700 11px/1 var(--text);
+}
+.complain-btn:hover { background: #FAD2CF; }
+.complain-btn:active { background: #F6BDB8; }
+.complain-btn:focus-visible { outline: 2px solid #D93025; outline-offset: 2px; }
+.hist__until { margin-top: 4px; text-align: right; font-size: var(--t12); color: #C5221F; }
+.hist__issue { margin-top: 4px; text-align: right; font-size: var(--t12); color: var(--alert); }
 .cp__title { padding-right: 44px; font: 600 var(--t24)/1.25 var(--display); color: var(--forest); }
 .cp__order { margin-top: var(--s1); font-size: var(--t14); color: var(--grey); }
 .cp__group { min-width: 0; margin: var(--s5) 0 0; padding: 0; border: 0; }

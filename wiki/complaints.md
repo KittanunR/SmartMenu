@@ -34,3 +34,6 @@
 - Order deployment (AKfycbyCWF…) = **Version 14 "v14 complaints with photos"**, same /exec. Live check: complain / history with a fake token → `session`; a 40 K-char order → `too_big`. Admin deployment unchanged (v13).
 - AppSheet sandbox: Exception regenerated (16 cols incl. _RowNumber); Photo/Photo_2/Photo_3 = Image (AppSheet's guess); Web_Item guessed Url → set to Text; Source / Complaint_ID / Web_Item Editable off; nothing Required. Saved, no issues.
 - Left: step 4 (Petch pushes in GitHub Desktop, site ?v=2026-11-03a) and step 5 (iPhone test on a Delivered order).
+
+## 2026-11-03 20:10 — button moved next to the status (Petch asked)
+- "แจ้งปัญหาสินค้า" is now a red boxed button (`.complain-btn`, red border + light-red fill + "!" icon) in the card's top row, right beside the status pill; "แจ้งได้ถึง …" and "แจ้งปัญหาแล้ว n เรื่อง" sit right under it, right-aligned. Same rule (server `complain_until`). Cache keys -> ?v=2026-11-03b. Checked on iPhone 13 size (TH/EN, sheet opens, no console errors); 97 tests pass. Not pushed yet.

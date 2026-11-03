@@ -414,7 +414,25 @@
     const li = el('li', 'hist');
     const top = el('div', 'hist__top');
     top.append(el('span', 'hist__date', when(o.ordered_at, t)));
-    if (o.status) top.append(el('span', `pill pill--${STATUS_LOOK[o.status] || 'plain'}`, t.status[o.status] || o.status));
+    // Status on the right; the red "report a problem" button sits right beside it so the shop sees it at once
+    // (delivered, within 7 days, fewer than 3 reports: the server decides via complain_until).
+    const state_ = el('div', 'hist__state');
+    const until = Date.parse(o.complain_until || '');
+    const canComplain = until > Date.now();
+    if (canComplain) {
+      const btn = el('button', 'complain-btn', o.complaints > 0 ? t.complainMore : t.complain);
+      btn.type = 'button';
+      btn.addEventListener('click', () => openComplaint(o));
+      state_.append(btn);
+    }
+    if (o.status) state_.append(el('span', `pill pill--${STATUS_LOOK[o.status] || 'plain'}`, t.status[o.status] || o.status));
+    top.append(state_);
+    const notes = [];
+    if (canComplain) {
+      const day = new Intl.DateTimeFormat(t.locale, { timeZone: TZ, day: 'numeric', month: 'short' }).format(new Date(until));
+      notes.push(el('p', 'hist__until', t.complainUntil(day)));
+    }
+    if (o.complaints > 0) notes.push(el('p', 'hist__issue', t.complained(o.complaints)));
     const sum = el('p', 'hist__sum');
     sum.append(el('span', 'hist__total', `฿${money(o.total, t)}`), el('span', 'hist__count', t.lines(o.items.length)));
     const meta = el('p', 'hist__meta', [o.id, o.delivery_date ? t.deliver(deliveryDay(o.delivery_date, t)) : ''].filter(Boolean).join(' · '));
@@ -440,20 +458,7 @@
     const again = el('button', 'add-btn hist__again', t.again);
     again.type = 'button';
     again.addEventListener('click', () => orderAgain(o));
-    li.append(top, sum, meta, details, again);
-
-    // Report a problem: delivered, within 7 days, fewer than 3 reports (the server decides: complain_until).
-    const until = Date.parse(o.complain_until || '');
-    if (o.complaints > 0) li.append(el('p', 'hist__issue', t.complained(o.complaints)));
-    if (until > Date.now()) {
-      const row = el('div', 'hist__complain');
-      const btn = el('button', 'text-btn', o.complaints > 0 ? t.complainMore : t.complain);
-      btn.type = 'button';
-      btn.addEventListener('click', () => openComplaint(o));
-      const day = new Intl.DateTimeFormat(t.locale, { timeZone: TZ, day: 'numeric', month: 'short' }).format(new Date(until));
-      row.append(btn, el('span', 'hist__until', t.complainUntil(day)));
-      li.append(row);
-    }
+    li.append(top, ...notes, sum, meta, details, again);
     return li;
   }
 
