@@ -1,12 +1,19 @@
 // Order History (Phase 4) + Analytics (Phase 5): the logged-in shop's own web orders from the last 90 days
 // (Member.gs 'history'), with a summary worked out here from the same orders: totals, spend per week, by category, top products.
 // Needs the session saved by member.html (localStorage 'menu-member'); a shop QR never opens this page.
+// Complaints (2026-11-03): a delivered order can get "report a problem" for 7 days: reason, products, note, 1–3 photos
+// (shrunk here to ≤1600 px JPEG) → Member.gs 'complain' → DIFOT Exception rows + order status Issue.
 // "Order again" hands [sku, qty] pairs to app.js through localStorage 'menu-reorder'; the menu puts them in the cart
 // at this week's prices and skips what is no longer sold. Everything shown is set with textContent.
 'use strict';
 
 (function () {
   const TIMEOUT_MS = 30000;   // an Apps Script cold start plus reading the Order sheet
+  const UPLOAD_TIMEOUT_MS = 90000;   // a complaint carries photos: give a slow phone connection time
+  const PHOTO_MAX = 3;
+  const PHOTO_B64_MAX = 780000;      // ≈ 585 KB, under Member.gs PHOTO_MAX_BYTES (600 KB)
+  const REASONS = ['RD-01', 'RD-02', 'RD-03', 'RD-04', 'RD-05', 'RD-06'];   // DIFOT Master, Type Reason_Delivery
+  const REASON_OTHER = 'RD-06';      // "other" needs a note (Member.gs: a reason whose name says other)
   const STORE = 'menu-member';
   const REORDER = 'menu-reorder';
   const TZ = 'Asia/Bangkok';
@@ -47,6 +54,37 @@
       note: 'ยอดตามราคาตอนสั่ง ไม่ใช่ยอดที่ส่งจริง',
       capped: (n) => ` · นับจาก ${n} ออเดอร์ล่าสุด`,
       ordersTitle: 'ออเดอร์ทั้งหมด',
+      complain: 'แจ้งปัญหาสินค้า',
+      complainMore: 'แจ้งปัญหาเพิ่ม',
+      complainUntil: (d) => `แจ้งได้ถึง ${d}`,
+      complained: (n) => `แจ้งปัญหาแล้ว ${n} เรื่อง · ร้านจะติดต่อกลับ`,
+      cpTitle: 'แจ้งปัญหาออเดอร์',
+      cpOrder: (id, d) => `${id} · สั่งเมื่อ ${d}`,
+      cpWhy: 'ปัญหาที่พบ',
+      reasons: { 'RD-01': 'ของขาด / ได้ไม่ครบ', 'RD-02': 'ได้ของผิด', 'RD-03': 'ของเสียหาย', 'RD-04': 'ของไม่เย็น', 'RD-05': 'ส่งช้า', 'RD-06': 'อื่นๆ' },
+      cpWhat: 'สินค้าที่มีปัญหา',
+      cpWhatHint: 'ไม่ต้องเลือก ถ้าเป็นปัญหาทั้งออเดอร์ เช่น ส่งช้า',
+      cpPhotos: 'รูปถ่าย 1–3 รูป',
+      cpPhotosHint: 'ถ่ายให้เห็นสินค้าและถุงหรือฉลาก ร้านจะตรวจได้เร็วขึ้น',
+      cpAddPhoto: 'ถ่ายรูป / เลือกรูป',
+      cpRemove: (n) => `ลบรูปที่ ${n}`,
+      cpNote: 'รายละเอียดเพิ่มเติม (ไม่บังคับ)',
+      cpNoteReq: 'รายละเอียด (จำเป็น)',
+      cpSend: 'ส่งเรื่องให้ร้าน',
+      cpSending: 'กำลังส่ง…',
+      cpPreparing: 'กำลังเตรียมรูป…',
+      cpPrivacy: 'รูปและข้อความเห็นเฉพาะพนักงานร้าน ใช้เพื่อแก้ปัญหาออเดอร์นี้เท่านั้น',
+      cpNeedReason: 'เลือกปัญหาที่พบ',
+      cpNeedNote: 'เขียนรายละเอียดสั้นๆ ว่าเกิดอะไรขึ้น',
+      cpNeedPhoto: 'แนบรูปอย่างน้อย 1 รูป',
+      cpPhotoBad: 'ใช้รูปนี้ไม่ได้ ลองถ่ายใหม่หรือเลือกรูปอื่น',
+      cpTooMany: 'แนบได้สูงสุด 3 รูป',
+      cpClosed: 'ออเดอร์นี้แจ้งปัญหาทางเว็บไม่ได้แล้ว ทักร้านทาง LINE ได้เลย',
+      cpRate: 'แจ้งปัญหาครบจำนวนแล้ว ทักร้านทาง LINE ได้เลย',
+      cpDoneTitle: 'ส่งเรื่องให้ร้านแล้ว',
+      cpDoneBody: (id) => `เลขที่เรื่อง ${id} · ร้านจะตรวจสอบและติดต่อกลับ`,
+      cpOk: 'ตกลง',
+      cpClose: 'ปิด',
       unit: (u) => ({ kg: 'กก.', tray: 'แผง', pack: 'แพ็ก' }[u] || u),
       status: {
         New: 'รอร้านยืนยัน', Received: 'รับออเดอร์แล้ว', Packed: 'จัดของแล้ว', Out: 'กำลังไปส่ง',
@@ -88,6 +126,37 @@
       note: 'At the price when ordered, not what was delivered.',
       capped: (n) => ` · From your latest ${n} orders.`,
       ordersTitle: 'All orders',
+      complain: 'Report a problem',
+      complainMore: 'Report another problem',
+      complainUntil: (d) => `until ${d}`,
+      complained: (n) => `${n === 1 ? '1 problem' : `${n} problems`} reported · the shop will contact you`,
+      cpTitle: 'Report a problem',
+      cpOrder: (id, d) => `${id} · ordered ${d}`,
+      cpWhy: 'What went wrong?',
+      reasons: { 'RD-01': 'Missing / short', 'RD-02': 'Wrong item', 'RD-03': 'Damaged', 'RD-04': 'Not cold', 'RD-05': 'Late delivery', 'RD-06': 'Other' },
+      cpWhat: 'Which products?',
+      cpWhatHint: 'Leave empty if it is about the whole order, e.g. late delivery.',
+      cpPhotos: '1–3 photos',
+      cpPhotosHint: 'Show the product and its bag or label, so the shop can check quickly.',
+      cpAddPhoto: 'Take / choose photo',
+      cpRemove: (n) => `Remove photo ${n}`,
+      cpNote: 'More details (optional)',
+      cpNoteReq: 'Details (needed)',
+      cpSend: 'Send to the shop',
+      cpSending: 'Sending…',
+      cpPreparing: 'Preparing photos…',
+      cpPrivacy: 'Only shop staff see the photos and text, and only to sort out this order.',
+      cpNeedReason: 'Choose what went wrong.',
+      cpNeedNote: 'Write a few words about what happened.',
+      cpNeedPhoto: 'Add at least 1 photo.',
+      cpPhotoBad: "This photo can't be used. Take it again or choose another one.",
+      cpTooMany: 'Up to 3 photos.',
+      cpClosed: "This order can't take a problem report on the web any more. Message the shop on LINE.",
+      cpRate: 'This order already has the most reports allowed. Message the shop on LINE.',
+      cpDoneTitle: 'Sent to the shop',
+      cpDoneBody: (id) => `Reference ${id} · the shop will check and contact you.`,
+      cpOk: 'OK',
+      cpClose: 'Close',
       unit: (u, n) => ({ kg: 'kg', tray: n === 1 ? 'tray' : 'trays', pack: n === 1 ? 'pack' : 'packs' }[u] || u),
       status: {
         New: 'Waiting for the shop', Received: 'Received', Packed: 'Packed', Out: 'On the way',
@@ -102,10 +171,11 @@
   const I18N = window.SM_I18N || null;
   if (I18N) Object.keys(I18N.history).forEach((l) => {
     const x = I18N.history[l];
-    TEXT[l] = { ...TEXT.en, ...x, status: { ...TEXT.en.status, ...x.status }, catName: { ...TEXT.en.catName, ...x.catName } };
+    TEXT[l] = { ...TEXT.en, ...x, status: { ...TEXT.en.status, ...x.status }, catName: { ...TEXT.en.catName, ...x.catName },
+      reasons: { ...TEXT.en.reasons, ...x.reasons } };
   });
 
-  const state = { lang: pickLanguage(), config: {}, member: loadMember(), catalog: new Map(), result: null, error: '', loading: true, week: null };
+  const state = { lang: pickLanguage(), config: {}, member: loadMember(), catalog: new Map(), result: null, error: '', loading: true, week: null, cp: null };
   const $ = (id) => document.getElementById(id);
 
   function storageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
@@ -140,11 +210,11 @@
   }
 
   // Same request shape as orders (text/plain: Apps Script cannot answer a CORS preflight).
-  async function post(body) {
+  async function post(body, timeout = TIMEOUT_MS) {
     const url = String(state.config.order_endpoint || '').trim();
     if (!url) return { ok: false, error: 'off' };
     const ctl = typeof AbortController === 'function' ? new AbortController() : null;
-    const timer = ctl ? setTimeout(() => ctl.abort(), TIMEOUT_MS) : 0;
+    const timer = ctl ? setTimeout(() => ctl.abort(), timeout) : 0;
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -337,6 +407,7 @@
     $('h-head').hidden = list.hidden;
     renderStats(orders, t);
     $('h-limit').hidden = !state.member || state.loading;
+    renderComplaint();
   }
 
   function orderCard(o, t) {
@@ -370,7 +441,229 @@
     again.type = 'button';
     again.addEventListener('click', () => orderAgain(o));
     li.append(top, sum, meta, details, again);
+
+    // Report a problem: delivered, within 7 days, fewer than 3 reports (the server decides: complain_until).
+    const until = Date.parse(o.complain_until || '');
+    if (o.complaints > 0) li.append(el('p', 'hist__issue', t.complained(o.complaints)));
+    if (until > Date.now()) {
+      const row = el('div', 'hist__complain');
+      const btn = el('button', 'text-btn', o.complaints > 0 ? t.complainMore : t.complain);
+      btn.type = 'button';
+      btn.addEventListener('click', () => openComplaint(o));
+      const day = new Intl.DateTimeFormat(t.locale, { timeZone: TZ, day: 'numeric', month: 'short' }).format(new Date(until));
+      row.append(btn, el('span', 'hist__until', t.complainUntil(day)));
+      li.append(row);
+    }
     return li;
+  }
+
+  // ---------- report a problem (2026-11-03) ----------
+  // state.cp: { order, reason, skus:Set, note, photos:[{ mime, base64, url }], clientId, busy, done }
+  function newId() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    const b = new Uint8Array(16);
+    crypto.getRandomValues(b);
+    return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  function openComplaint(o) {
+    state.cp = { order: o, reason: '', skus: new Set(), note: '', photos: [], clientId: newId(), busy: '', done: '', error: '' };
+    $('cp-note').value = '';
+    $('cp-file').value = '';
+    renderComplaint();
+    $('cp').showModal();
+  }
+
+  // Anything changed after a failed send is a new report: a new id, so the server never answers with the old one.
+  function cpChanged() {
+    if (!state.cp || state.cp.busy) return;
+    state.cp.clientId = newId();
+    state.cp.error = '';
+  }
+
+  function renderComplaint() {
+    const cp = state.cp;
+    if (!cp) return;
+    const t = TEXT[state.lang];
+    const o = cp.order;
+    $('cp-form').hidden = Boolean(cp.done);
+    $('cp-done').hidden = !cp.done;
+    if (cp.done) {
+      $('cp-done-body').textContent = t.cpDoneBody(cp.done);
+      return;
+    }
+    $('cp-order').textContent = t.cpOrder(o.id, when(o.ordered_at, t));
+
+    $('cp-reasons').replaceChildren(...REASONS.map((code) => {
+      const label = el('label', 'cp__reason');
+      const input = el('input');
+      input.type = 'radio';
+      input.name = 'cp-reason';
+      input.value = code;
+      input.checked = cp.reason === code;
+      input.disabled = Boolean(cp.busy);
+      input.addEventListener('change', () => { cp.reason = code; cpChanged(); renderComplaint(); });
+      label.append(input, el('span', null, t.reasons[code] || code));
+      return label;
+    }));
+
+    $('cp-items').replaceChildren(...o.items.map((it) => {
+      const p = state.catalog.get(it.sku);
+      const li = el('li');
+      const label = el('label', 'cp__item');
+      const input = el('input');
+      input.type = 'checkbox';
+      input.checked = cp.skus.has(it.sku);
+      input.disabled = Boolean(cp.busy);
+      input.addEventListener('change', () => {
+        if (input.checked) cp.skus.add(it.sku); else cp.skus.delete(it.sku);
+        cpChanged();
+      });
+      const img = el('img', 'hist__img');
+      img.alt = '';
+      if (p && /^assets\/products\/[A-Z]{2}-\d{3}\.webp$/.test(p.image || '')) img.src = p.image;
+      const text = el('span', 'hist__name');
+      text.append(...productName(p, it.name_th || it.sku),
+        el('span', 'hist__each', t.each(money(it.qty, t), t.unit(it.qty_unit, it.qty), money(it.unit_price, t))));
+      label.append(input, img, text);
+      li.append(label);
+      return li;
+    }));
+
+    $('cp-photos').replaceChildren(...cp.photos.map((ph, i) => {
+      const li = el('li', 'cp__photo');
+      const img = el('img');
+      img.src = ph.url;
+      img.alt = '';
+      const del = el('button', 'cp__del');
+      del.type = 'button';
+      del.disabled = Boolean(cp.busy);
+      del.setAttribute('aria-label', t.cpRemove(i + 1));
+      del.textContent = '×';
+      del.addEventListener('click', () => { cp.photos.splice(i, 1); cpChanged(); renderComplaint(); });
+      li.append(img, del);
+      return li;
+    }));
+    $('cp-add').hidden = cp.photos.length >= PHOTO_MAX;
+    $('cp-file').disabled = Boolean(cp.busy);
+
+    const needNote = cp.reason === REASON_OTHER;
+    $('cp-note-label').textContent = needNote ? t.cpNoteReq : t.cpNote;
+    $('cp-note').required = needNote;
+    $('cp-note').disabled = Boolean(cp.busy);
+    $('cp-error').textContent = cp.error;
+    $('cp-error').hidden = !cp.error;
+    const send = $('cp-send');
+    send.disabled = Boolean(cp.busy);
+    send.replaceChildren();
+    if (cp.busy) send.append(el('span', 'spinner', null), el('span', null, cp.busy === 'photos' ? t.cpPreparing : t.cpSending));
+    else send.textContent = t.cpSend;
+  }
+
+  // A phone photo (often 3–12 MP) → JPEG of at most 1600 px on the long side, smaller steps until it fits the limit.
+  // FileReader + data: URL, not blob:, because the page's CSP allows img-src data: only.
+  function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image'));
+      img.src = src;
+    });
+  }
+  async function shrinkPhoto(file) {
+    const img = await loadImage(await readAsDataUrl(file));
+    for (const [side, q] of [[1600, 0.82], [1280, 0.72], [1024, 0.62]]) {
+      const k = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * k));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * k));
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const url = canvas.toDataURL('image/jpeg', q);
+      const base64 = url.slice(url.indexOf(',') + 1);
+      if (url.startsWith('data:image/jpeg;base64,') && base64.length <= PHOTO_B64_MAX) return { mime: 'image/jpeg', base64, url };
+    }
+    throw new Error('too big');
+  }
+
+  async function addPhotos(files) {
+    const cp = state.cp;
+    const t = TEXT[state.lang];
+    if (!cp || !files.length) return;
+    const room = PHOTO_MAX - cp.photos.length;
+    cp.error = files.length > room ? t.cpTooMany : '';
+    cp.busy = 'photos';
+    renderComplaint();
+    let bad = false;
+    for (const file of files.slice(0, room)) {
+      try { cp.photos.push(await shrinkPhoto(file)); } catch (_) { bad = true; }
+    }
+    cp.busy = '';
+    cpChanged();   // new photos = a new report id (and clears the old message)
+    if (bad) cp.error = t.cpPhotoBad; else if (files.length > room) cp.error = t.cpTooMany;
+    $('cp-file').value = '';
+    if (state.cp === cp) renderComplaint();
+  }
+
+  // Busy, server hiccups and lost connections are tried again with the same id (the server writes it once).
+  async function sendComplaint(ev) {
+    ev.preventDefault();
+    const cp = state.cp;
+    const t = TEXT[state.lang];
+    if (!cp || cp.busy) return;
+    cp.note = $('cp-note').value.trim();
+    cp.error = !cp.reason ? t.cpNeedReason
+      : cp.reason === REASON_OTHER && !cp.note ? t.cpNeedNote
+        : !cp.photos.length ? t.cpNeedPhoto : '';
+    if (cp.error) { renderComplaint(); return; }
+    cp.busy = 'send';
+    renderComplaint();
+    const body = { contract: 'order.v1', action: 'complain', token: state.member.token, order_id: cp.order.id,
+      reason: cp.reason, skus: cp.order.items.map((it) => it.sku).filter((k) => cp.skus.has(k)), note: cp.note,
+      photos: cp.photos.map((p) => ({ mime: p.mime, base64: p.base64 })), client_id: cp.clientId };
+    let res;
+    for (const wait of [0, 2000, 5000]) {
+      if (wait) await new Promise((r) => { setTimeout(r, wait); });
+      res = await post(body, UPLOAD_TIMEOUT_MS);
+      if (res.ok || !['busy', 'server', 'network'].includes(res.error)) break;
+    }
+    cp.busy = '';
+    if (res.ok) {
+      cp.done = res.complaint_id || '—';
+    } else if (res.error === 'session') {
+      $('cp').close();
+      loggedOut();
+      return;
+    } else {
+      cp.error = { not_found: t.cpClosed, not_delivered: t.cpClosed, too_late: t.cpClosed, rate: t.cpRate,
+        photo: t.cpNeedPhoto, photo_type: t.cpPhotoBad, photo_size: t.cpPhotoBad, note: t.cpNeedNote,
+        reason: t.cpNeedReason, network: t.network }[res.error] || t.server;
+    }
+    if (state.cp === cp) renderComplaint();
+  }
+
+  function closeComplaint() {
+    const sent = state.cp && state.cp.done;
+    if (state.cp && state.cp.busy === 'send') return;   // the request is on its way: wait for the answer
+    $('cp').close();
+    state.cp = null;
+    if (sent) load();   // status is now Issue and the report count changed
+  }
+
+  function loggedOut() {
+    storageSet(STORE, '');   // reset, closed or expired: the menu shows the shop as logged out too
+    tabSet(STORE, '');
+    state.member = null;
+    state.result = null;
+    state.error = 'session';
+    render();
   }
 
   function orderAgain(o) {
@@ -389,10 +682,8 @@
     if (res.ok && Array.isArray(res.orders)) {
       state.result = res;
     } else if (res.error === 'session') {
-      storageSet(STORE, '');   // reset, closed or expired: the menu shows the shop as logged out too
-      tabSet(STORE, '');
-      state.member = null;
-      state.error = 'session';
+      loggedOut();
+      return;
     } else {
       state.error = res.error === 'network' || res.error === 'off' ? res.error : 'server';
     }
@@ -408,6 +699,13 @@
       render();
     });
     $('h-retry').addEventListener('click', load);
+    $('cp-form').addEventListener('submit', sendComplaint);
+    $('cp-file').addEventListener('change', () => addPhotos(Array.from($('cp-file').files || [])));
+    $('cp-note').addEventListener('input', cpChanged);
+    $('cp-close').addEventListener('click', closeComplaint);
+    $('cp-ok').addEventListener('click', closeComplaint);
+    $('cp').addEventListener('cancel', (ev) => { ev.preventDefault(); closeComplaint(); });   // Esc / back gesture
+    $('cp').addEventListener('click', (ev) => { if (ev.target === $('cp')) closeComplaint(); });   // tap outside
     state.loading = Boolean(state.member);
     render();
     const [config, catalog] = await Promise.all([getJson('config.json'), getJson('data/catalog.json')]);

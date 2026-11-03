@@ -10,9 +10,9 @@
   <title>ประวัติการสั่งซื้อ · Betagro Shop</title>
   <link rel="preload" href="assets/fonts/prompt-thai-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%231A4A20%22/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2026-10-27a">
-  <script src="i18n.js?v=2026-10-27a" defer></script>
-  <script src="history.js?v=2026-10-27a" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2026-11-03a">
+  <script src="i18n.js?v=2026-11-03a" defer></script>
+  <script src="history.js?v=2026-11-03a" defer></script>
 </head>
 <body class="member">
   <!-- Order History (Phase 4): the logged-in shop's own web orders. Needs the session from member.html; see history.js. -->
@@ -74,5 +74,50 @@
     <ol class="history" id="h-list" hidden></ol>
     <p class="member__help" id="h-limit" data-t="limit" hidden></p>
   </main>
+
+  <!-- Complaint (2026-11-03): one delivered order's problem + 1–3 photos → Member.gs 'complain'. Filled by history.js. -->
+  <dialog class="sheet cp" id="cp" aria-labelledby="cp-title">
+    <div class="sheet__body">
+      <button class="sheet__close" id="cp-close" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        <span class="sr-only" data-t="cpClose"></span>
+      </button>
+      <form id="cp-form" novalidate>
+        <h2 class="cp__title" id="cp-title" data-t="cpTitle"></h2>
+        <p class="cp__order" id="cp-order"></p>
+        <fieldset class="cp__group">
+          <legend class="cp__legend" data-t="cpWhy"></legend>
+          <div class="cp__reasons" id="cp-reasons"></div>
+        </fieldset>
+        <fieldset class="cp__group">
+          <legend class="cp__legend" data-t="cpWhat"></legend>
+          <p class="field__hint" data-t="cpWhatHint"></p>
+          <ul class="cp__items" id="cp-items"></ul>
+        </fieldset>
+        <fieldset class="cp__group">
+          <legend class="cp__legend" data-t="cpPhotos"></legend>
+          <p class="field__hint" data-t="cpPhotosHint"></p>
+          <ul class="cp__photos" id="cp-photos"></ul>
+          <label class="add-btn cp__add" id="cp-add">
+            <input class="sr-only" type="file" id="cp-file" accept="image/*" multiple>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span data-t="cpAddPhoto"></span>
+          </label>
+        </fieldset>
+        <div class="field">
+          <label for="cp-note" id="cp-note-label"></label>
+          <textarea id="cp-note" maxlength="400" rows="3"></textarea>
+        </div>
+        <p class="form__error" id="cp-error" role="alert" hidden></p>
+        <button class="order-btn" id="cp-send" type="submit"></button>
+        <p class="field__hint cp__privacy" data-t="cpPrivacy"></p>
+      </form>
+      <div class="cp__done" id="cp-done" hidden>
+        <h2 class="cp__title" data-t="cpDoneTitle"></h2>
+        <p class="cp__order" id="cp-done-body"></p>
+        <button class="order-btn" id="cp-ok" type="button" data-t="cpOk"></button>
+      </div>
+    </div>
+  </dialog>
 </body>
 </html>

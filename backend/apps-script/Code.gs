@@ -1,6 +1,8 @@
 /**
  * SmartMenu → DIFOT order intake (Google Apps Script, standalone project in btgs.sukhumvit Drive, writes to the SANDBOX sheet).
  * Contract: docs/ORDER_CONTRACT.md (order.v1). Orders only ever APPEND rows; never edit or delete.
+ * One exception (2026-11-03): a shop's complaint (Member.gs complain_) sets Status = Issue and Customer_Issue on that
+ * shop's own delivered order, as the DIFOT app's own "Customer Issue" step does.
  * The exceptions are run by hand and only fill EMPTY cells: makeShopCodes() (Master.Shop_Code / Shop_Link) and
  * backfillCategories() (Order_Items.Category).
  * Sandbox sheet id 1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg (2026-10-22).
@@ -12,6 +14,7 @@ const SITE_URL = 'https://kittanunr.github.io/SmartMenu/';
 // Auth = how the order was identified: 'guest' (typed form), 'shop_qr' (shop's own link), 'member' (logged in).
 const ORDER_EXTRA_COLS = ['Source', 'Web_Shop_Name', 'Web_Phone', 'Web_Delivery_Date', 'Web_Note', 'Web_Total', 'Web_Client_ID', 'Auth'];
 const MAX_BODY = 30000;            // chars; a real 40-line order is ~8,000
+const MAX_COMPLAINT_BODY = 2700000; // a complaint carries up to 3 photos of ≤ 600 KB (base64 ≈ 800 K chars each)
 const LOCK_WAIT_MS = 20000;        // then answer 'busy' and let the site retry
 const LIMIT_PER_PHONE = 5;         // orders per phone per hour
 const LIMIT_ALL = 40;              // orders per hour from the whole site (stops a flood filling the sheet)
@@ -32,6 +35,10 @@ const SESSION_COLS = ['Token_Hash', 'Customer_ID', 'Created_At', 'Expires_At', '
 const ADMIN_LOG_COLS = ['Timestamp', 'User', 'Action', 'Customer_ID', 'Note'];
 // Same rule as the catalog check (scripts/lib/checks.mjs SKU_PREFIX): a SKU's prefix names its category.
 const SKU_CATEGORY = { PK: 'pork', CK: 'chicken', EG: 'egg', FS: 'fish' };
+// DIFOT's own Exception table (first 9) + what a web complaint adds (2026-11-03). Photos are AppSheet Image paths.
+// SKU_Code holds our SKU (PK-001…), which DIFOT's Master does not list, so Web_Item carries the product name.
+const EXCEPTION_COLS = ['Exception_ID', 'Order_ID', 'Shop_ID', 'Stage', 'SKU_Code', 'Reason_Code', 'Other_Note',
+  'Logged_At', 'Logged_By', 'Source', 'Complaint_ID', 'Web_Item', 'Photo', 'Photo_2', 'Photo_3'];
 
 /** Run by hand after each Code.gs update: adds missing tabs, and missing columns at the far right. Safe to re-run. */
 function setup() {
@@ -42,6 +49,7 @@ function setup() {
   ensureTab_(ss, 'Member_Auth', AUTH_COLS);
   ensureTab_(ss, 'Sessions', SESSION_COLS);
   ensureTab_(ss, 'Admin_Log', ADMIN_LOG_COLS);
+  ensureTab_(ss, 'Exception', EXCEPTION_COLS);
   return 'ok';
 }
 
@@ -167,9 +175,11 @@ function doGet() {
  */
 function doPost(e) {
   const body = (e && e.postData && e.postData.contents) || '';
-  if (body.length > MAX_BODY) return json_({ ok: false, error: 'too_big' });
+  if (body.length > MAX_COMPLAINT_BODY) return json_({ ok: false, error: 'too_big' });
   let o;
-  try { o = JSON.parse(body); } catch (err) { return json_({ ok: false, error: 'bad_json' }); }
+  try { o = JSON.parse(body); } catch (err) { return json_({ ok: false, error: body.length > MAX_BODY ? 'too_big' : 'bad_json' }); }
+  // Only a complaint (photos) may be bigger than an order.
+  if (body.length > MAX_BODY && !(o && o.action === 'complain')) return json_({ ok: false, error: 'too_big' });
   if (o && o.action === 'shop') return json_(shopLookup_(o.shop_code));
   if (o && MEMBER_ACTIONS[o.action] === true) return json_(memberAction_(o));   // shop login: Member.gs
   const bad = validate_(o);

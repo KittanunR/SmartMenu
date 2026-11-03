@@ -39,6 +39,15 @@ Shop login (same endpoint, same text/plain POST; Member.gs):
 - `{"action":"me","token":"…","logo_id":"<id the phone has>"}` → `{"ok":true,"shop":{"name","phone_masked","address_masked","logo_id"[,"logo_data_url"]}}` (the logo only when the phone does not have this one) or `{"ok":false,"error":"session"}`.
 - `{"action":"logout","token":"…"}` → `{"ok":true}` always.
 
+History (Member.gs, Phase 4) answers per order also `complain_until` (ISO time, or '' when no complaint can be sent now) and `complaints` (number already sent from the web), added 2026-11-03.
+
+Complaint (added 2026-11-03; same endpoint, same text/plain POST; Member.gs; the only action allowed a body over 30,000 chars — up to 2,700,000):
+`{"contract":"order.v1","action":"complain","token":"<64 hex>","order_id":"W261102-001","reason":"RD-03","skus":["PK-001"],"note":"…","photos":[{"mime":"image/jpeg","base64":"…"}],"client_id":"<8–64 [A-Za-z0-9-]>"}`
+→ `{"ok":true,"complaint_id":"CW1A2B3C4D"}` (`"duplicate":true` when the same client_id was already written).
+Rules: live member session; the shop's own member / shop_qr order; Status Delivered or Issue; ≤ 7 days after T5_Delivered; reason = active Master row Type Reason_Delivery; skus = [] (whole order) or SKUs of that order; 1–3 photos jpeg/png/webp ≤ 600 KB each (magic bytes checked); note ≤ 400, required for a reason named อื่นๆ/other; ≤ 3 complaints per order, ≤ 10 per shop per day.
+Errors: `session` (final, logs the phone out), `not_found`, `not_delivered`, `too_late`, `reason`, `note`, `items`, `photo`, `photo_type`, `photo_size`, `client_id`, `rate` (final); `busy`, `server` (the site retries with the same client_id).
+Writes: Exception rows (one per SKU, Stage After_Delivery, Source Web, Complaint_ID, Web_Item, Photo/Photo_2/Photo_3 = "Exception_Images/<CW id>-<n>.<ext>"), Order.Status = Issue + Customer_Issue = TRUE, Event row (Action Customer_Issue). Photos saved in <sheet folder>/Exception_Images.
+
 Response JSON: `{"ok":true,"order_id":"W261022-001"}` or `{"ok":false,"error":"<code>"}`.
 Error codes: `busy` (lock not free in 20 s) and `server` → the site retries. `rate` (≥5 orders/hour from one phone, or ≥40/hour from the whole site), `spam`, `too_big`, `bad_json`, and validation codes (`phone`, `items`, `total`, …) are final → the site shows the LINE fallback.
 

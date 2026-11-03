@@ -371,10 +371,15 @@ function isImage_(bytes, mime) {
  * (Before 2026-10-27 logos went to a separate private folder, script property LOGO_FOLDER_ID; see moveLogosForAppSheet.)
  */
 function logoFolder_() {
+  return imageFolder_(LOGO_SUBFOLDER);
+}
+
+/** <folder of the sheet>/<name>, made on first use. Also holds complaint photos (Exception_Images, Member.gs). */
+function imageFolder_(name) {
   const parents = DriveApp.getFileById(SHEET_ID).getParents();
   const home = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
-  const found = home.getFoldersByName(LOGO_SUBFOLDER);
-  return found.hasNext() ? found.next() : home.createFolder(LOGO_SUBFOLDER);
+  const found = home.getFoldersByName(name);
+  return found.hasNext() ? found.next() : home.createFolder(name);
 }
 
 /**

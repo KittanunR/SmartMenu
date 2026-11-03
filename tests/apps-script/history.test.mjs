@@ -91,7 +91,7 @@ test('history sends no phone, address or note, and turns a sheet date into yyyy-
   const m = b.member();
   b.addOrder({ id: 'W1', customer: m.id, auth: 'member', delivery: new Date('2026-10-26T00:00:00+07:00') });
   const res = b.history(m.token);
-  assert.deepEqual(Object.keys(res.orders[0]).sort(), ['delivery_date', 'id', 'items', 'ordered_at', 'status', 'total']);
+  assert.deepEqual(Object.keys(res.orders[0]).sort(), ['complain_until', 'complaints', 'delivery_date', 'id', 'items', 'ordered_at', 'status', 'total']);
   assert.equal(res.orders[0].delivery_date, '2026-10-26');
   assert.doesNotMatch(JSON.stringify(res), /0812345678|Sukhumvit Soi|LINE/);
 });

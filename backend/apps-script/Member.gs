@@ -1,6 +1,7 @@
 /**
- * Shop login (Phase 3) and order History (Phase 4). The site (member.html / history.html / app.js) calls these through
- * doPost with { action: 'login' | 'set_password' | 'me' | 'logout' | 'history', ... }; orders carry { session: token }.
+ * Shop login (Phase 3), order History (Phase 4) and complaints (2026-11-03). The site (member.html / history.html / app.js)
+ * calls these through doPost with { action: 'login' | 'set_password' | 'me' | 'logout' | 'history' | 'complain', ... };
+ * orders carry { session: token }.
  * - First login uses the temporary password from the admin page and must set the shop's own password.
  * - A session token is 32 random bytes (64 hex). Only its SHA-256 is stored (Sessions.Token_Hash).
  * - A shop logs in with its phone or its login name (Member_Auth.Login_Name, 2026-10-27) and the same password.
@@ -24,12 +25,25 @@ const DUMMY_HASH = '$2a$12$HQFAX./GkC1uj8/cE2UqyON/ovY/BEYSFGOhB08kdn8oH.he/VcKq
 const COMMON_PASSWORDS = ['password', 'password1', 'password123', '12345678', '123456789', '1234567890', '87654321',
   '11111111', '00000000', '12341234', 'qwertyui', 'qwerty123', 'iloveyou', 'abcd1234', 'abc12345', 'admin123',
   'welcome1', 'sukhumvit', 'betagro1', 'betagro123', 'smartmenu', 'bangkok1'];
-const MEMBER_ACTIONS = { login: true, set_password: true, me: true, logout: true, history: true };
+const MEMBER_ACTIONS = { login: true, set_password: true, me: true, logout: true, history: true, complain: true };
 // History (decided 2026-10-24): only orders the shop itself placed (login or its own QR). A guest order is filed under a
 // shop by the typed phone alone, so anyone could put one there; those stay out.
 const HISTORY_DAYS = 90;
 const HISTORY_MAX = 50;
 const HISTORY_AUTH = { member: true, shop_qr: true };
+// Complaints (2026-11-03): only on the shop's own History orders, once delivered, for 7 days after delivery; 1–3 photos.
+// Reasons are DIFOT's own (Master Type = Reason_Delivery, RD-01…), so the teammate's app reads them as its own.
+const COMPLAIN_DAYS = 7;
+const COMPLAINTS_PER_ORDER = 3;
+const COMPLAINTS_PER_SHOP_DAY = 10;
+const COMPLAIN_STATUS = { Delivered: true, Issue: true };
+const COMPLAINT_REASON_TYPE = 'Reason_Delivery';
+const COMPLAINT_STAGE = 'After_Delivery';
+const COMPLAINT_FOLDER = 'Exception_Images';   // next to the sheet; AppSheet's own name for an Exception table's images
+const PHOTO_MAX = 3;
+const PHOTO_MAX_BYTES = 600 * 1024;            // the page shrinks photos to 1600 px JPEG first (~200–400 KB)
+const PHOTO_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const NOTE_MAX = 400;
 
 const failKeyAll_ = () => 'lf:all:' + Utilities.formatDate(new Date(), TZ, 'yyMMddHH');
 const hex_ = bytes => bytes.map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
@@ -44,6 +58,7 @@ function memberAction_(o) {
   if (o.action === 'set_password') return setPassword_(o);
   if (o.action === 'me') return me_(o);
   if (o.action === 'history') return history_(o);
+  if (o.action === 'complain') return complain_(o);
   return logout_(o);
 }
 
@@ -158,10 +173,15 @@ function history_(o) {
   }
   picked.sort((a, b) => b.at.getTime() - a.at.getTime());
   const byId = {};
-  const out = picked.slice(0, HISTORY_MAX).map(({ r, at }) => {
+  const rows = picked.slice(0, HISTORY_MAX);
+  const counts = rows.length ? complaintCounts_(ss) : {};
+  const out = rows.map(({ r, at }) => {
     const id = orders.str(r, 'Order_ID');
+    const until = complainUntil_(orders, r);
+    const n = counts[id] || 0;
     byId[id] = { id, ordered_at: iso_(at), delivery_date: dayText_(orders.get(r, 'Web_Delivery_Date')),
-      total: Number(orders.get(r, 'Web_Total')) || 0, status: orders.str(r, 'Status'), items: [] };
+      total: Number(orders.get(r, 'Web_Total')) || 0, status: orders.str(r, 'Status'), items: [],
+      complain_until: until && until.getTime() > Date.now() && n < COMPLAINTS_PER_ORDER ? iso_(until) : '', complaints: n };
     return byId[id];
   });
   if (out.length) {
@@ -175,6 +195,148 @@ function history_(o) {
     }
   }
   return { ok: true, days: HISTORY_DAYS, orders: out };
+}
+
+/**
+ * A logged-in shop reports a problem with one of its own delivered orders: { order_id, reason (RD-xx), skus: [] (empty =
+ * the whole order), note, photos: [{ mime, base64 }] (1–3), client_id }. Writes, under the lock: one Exception row per
+ * product (Stage After_Delivery, Source Web, the photos' paths), Order.Status = Issue + Customer_Issue, one Event row.
+ * Photos go to <sheet folder>/Exception_Images, private, shown by AppSheet. The same client_id always gives the same
+ * complaint id, so a retry never writes twice (the id is found in the sheet even when the cache is gone).
+ */
+function complain_(o) {
+  const fail = error => ({ ok: false, error });
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const s = sessionOf_(ss, o.token);
+  if (!s) return fail('session');
+  if (o.client_id != null && !/^[A-Za-z0-9-]{8,64}$/.test(String(o.client_id))) return fail('client_id');
+  const cid = o.client_id ? 'CW' + sha256Hex_(s.id + '|' + o.client_id).slice(0, 8).toUpperCase()
+    : 'CW' + Utilities.getUuid().replace(/-/g, '').slice(0, 8).toUpperCase();
+  const cache = CacheService.getScriptCache();
+  const kDup = 'cc:' + cid;
+  if (o.client_id && cache.get(kDup)) return { ok: true, complaint_id: cid, duplicate: true };
+
+  // The order: this shop's own (login or QR), delivered, not more than 7 days ago.
+  const orders = table_(ss.getSheetByName('Order'));
+  const orderId = String(o.order_id || '');
+  const r = /^W\d{6}-\d{3}$/.test(orderId) ? orders.find('Order_ID', orderId) : -1;
+  if (r === -1 || orders.str(r, 'Customer_ID') !== s.id || HISTORY_AUTH[orders.str(r, 'Auth')] !== true) return fail('not_found');
+  if (COMPLAIN_STATUS[orders.str(r, 'Status')] !== true) return fail('not_delivered');
+  const until = complainUntil_(orders, r);
+  const already = o.client_id && complaintCounts_(ss, cid)[orderId];
+  if (already) return { ok: true, complaint_id: cid, duplicate: true };
+  if (!until || until.getTime() <= Date.now()) return fail('too_late');
+
+  // What and why.
+  const reason = complaintReason_(ss, o.reason);
+  if (!reason) return fail('reason');
+  const note = typeof o.note === 'string' ? o.note.replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, ' ').trim() : '';
+  if (note.length > NOTE_MAX || (reason.isOther && !note)) return fail('note');
+  const names = orderItemNames_(ss, orderId);
+  const skus = Array.isArray(o.skus) ? o.skus.map(String) : null;
+  if (!skus || skus.length > 40 || skus.some(k => !(k in names)) || new Set(skus).size !== skus.length) return fail('items');
+  const photos = Array.isArray(o.photos) ? o.photos : [];
+  if (photos.length < 1 || photos.length > PHOTO_MAX) return fail('photo');
+  const files = [];
+  for (const p of photos) {
+    const ext = p && PHOTO_TYPES[p.mime];
+    const b64 = String((p && p.base64) || '');
+    if (!ext || !/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) return fail('photo_type');
+    if (b64.length > Math.ceil(PHOTO_MAX_BYTES / 3) * 4) return fail('photo_size');
+    const bytes = Utilities.base64Decode(b64);
+    if (bytes.length > PHOTO_MAX_BYTES) return fail('photo_size');
+    if (!isImage_(bytes, p.mime)) return fail('photo_type');
+    files.push({ bytes, mime: p.mime, ext });
+  }
+
+  const now = new Date();
+  const kShop = 'cp:' + s.id + ':' + Utilities.formatDate(now, TZ, 'yyMMdd');
+  const nShop = Number(cache.get(kShop)) || 0;
+  if (nShop >= COMPLAINTS_PER_SHOP_DAY) return fail('rate');
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(LOCK_WAIT_MS)) return fail('busy');
+  try {
+    // Again under the lock: the first try may have finished while this one waited.
+    const counts = complaintCounts_(ss);
+    if (o.client_id && complaintCounts_(ss, cid)[orderId]) return { ok: true, complaint_id: cid, duplicate: true };
+    if ((counts[orderId] || 0) >= COMPLAINTS_PER_ORDER) return fail('rate');
+
+    const folder = imageFolder_(COMPLAINT_FOLDER);   // Admin.gs
+    const paths = files.map((f, i) => {
+      const name = cid + '-' + (i + 1) + '.' + f.ext;
+      folder.createFile(Utilities.newBlob(f.bytes, f.mime, name));
+      return COMPLAINT_FOLDER + '/' + name;
+    });
+    const rowFor = sku => ({
+      Exception_ID: 'XW' + Utilities.getUuid().replace(/-/g, '').slice(0, 8).toUpperCase(), Order_ID: orderId,
+      Shop_ID: SHOP_ID, Stage: COMPLAINT_STAGE, SKU_Code: sku, Reason_Code: reason.code, Other_Note: note,
+      Logged_At: now, Logged_By: 'web:' + s.id, Source: 'Web', Complaint_ID: cid, Web_Item: sku ? names[sku] : '',
+      Photo: paths[0] || '', Photo_2: paths[1] || '', Photo_3: paths[2] || ''
+    });
+    appendRowsByHeader_(ss.getSheetByName('Exception'), (skus.length ? skus : ['']).map(rowFor));
+    orders.set(r, { Status: 'Issue', Customer_Issue: true });
+    appendByHeader_(ss.getSheetByName('Event'), {
+      Event_ID: 'EW' + Utilities.getUuid().slice(0, 8), Order_ID: orderId, Shop_ID: SHOP_ID, Station: 'Web',
+      Action: 'Customer_Issue', Timestamp: now, User: 'web:' + s.id, Photo: paths[0],
+      Note: reason.name + ', ' + (skus.length ? skus.length + ' items' : 'whole order') + ', ' + paths.length + ' photo(s), ' + cid
+    });
+    SpreadsheetApp.flush();
+    if (o.client_id) cache.put(kDup, '1', 21600);
+    cache.put(kShop, String(nShop + 1), 90000);
+    return { ok: true, complaint_id: cid };
+  } catch (err) {
+    console.error(err);
+    return fail('server');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Last moment a complaint may be sent: 7 days after delivery (T5_Delivered, else the order date), or null. */
+function complainUntil_(orders, r) {
+  if (COMPLAIN_STATUS[orders.str(r, 'Status')] !== true) return null;
+  const done = orders.get(r, 'T5_Delivered');
+  const base = isDate_(done) ? done : orders.get(r, 'Order_Date');
+  return isDate_(base) ? new Date(base.getTime() + COMPLAIN_DAYS * DAY_MS) : null;
+}
+
+/** { Order_ID: number of web complaints } (a complaint with 3 products is 3 rows but counts once); only `onlyCid` if given. */
+function complaintCounts_(ss, onlyCid) {
+  const sheet = ss.getSheetByName('Exception');
+  if (!sheet) return {};
+  const ex = table_(sheet);
+  const seen = {}, out = {};
+  for (let r = 0; r < ex.rows.length; r++) {
+    const c = ex.str(r, 'Complaint_ID');
+    if (ex.str(r, 'Source') !== 'Web' || !c || seen[c] || (onlyCid && c !== onlyCid)) continue;
+    seen[c] = true;
+    const id = ex.str(r, 'Order_ID');
+    out[id] = (out[id] || 0) + 1;
+  }
+  return out;
+}
+
+/** The active delivery reason with this code: { code, name, isOther }, or null. */
+function complaintReason_(ss, code) {
+  if (typeof code !== 'string' || !/^[A-Z]{2}-\d{2}$/.test(code)) return null;
+  const m = table_(ss.getSheetByName('Master'));
+  for (let r = 0; r < m.rows.length; r++) {
+    if (m.str(r, 'Code') !== code || m.str(r, 'Type') !== COMPLAINT_REASON_TYPE || isInactive_(m.get(r, 'Active'))) continue;
+    const name = m.str(r, 'Name');
+    return { code, name, isOther: /อื่น|other/i.test(name) };
+  }
+  return null;
+}
+
+/** { SKU: Thai name } of the order's lines. */
+function orderItemNames_(ss, orderId) {
+  const items = table_(ss.getSheetByName('Order_Items'));
+  const out = {};
+  for (let r = 0; r < items.rows.length; r++) {
+    if (items.str(r, 'Order_ID') === orderId) out[items.str(r, 'SKU')] = items.str(r, 'Name_TH');
+  }
+  return out;
 }
 
 // Sheets turns a typed 2026-10-25 into a date; either way the site gets yyyy-MM-dd.

@@ -12,6 +12,8 @@ export const ORIGINAL_HEADERS = {
     'Pick_Result', 'T3_Packed', 'Bag_Photo', 'T4_Pickup', 'Rider_Type', 'T5_Delivered', 'Delivery_Photo', 'Customer_Issue', 'Status'],
   Master: ['Code', 'Type', 'Name', 'Category', 'Sort_Order', 'Value', 'Active', 'Shop_ID'],
   Event: ['Event_ID', 'Order_ID', 'Shop_ID', 'Station', 'Action', 'Timestamp', 'User', 'Photo', 'Note'],
+  // Read from the sandbox sheet 2026-11-03 (same as the teammate's DIFOT app): one row per problem, reasons from Master.
+  Exception: ['Exception_ID', 'Order_ID', 'Shop_ID', 'Stage', 'SKU_Code', 'Reason_Code', 'Other_Note', 'Logged_At', 'Logged_By'],
 };
 
 class FakeRange {

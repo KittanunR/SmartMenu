@@ -22,5 +22,9 @@ Dated history of decisions for the QR price-menu site. Never "currently" — dat
 
 - [member-accounts.md](member-accounts.md) — 2026-10-23 optional shop login (Guest/Member), admin-issued temp password, History + Analytics
 
+- [complaints.md](complaints.md) — 2026-11-03 shops report a problem with photos from History → DIFOT Exception + Issue
+
+- [real-difot-switch.md](real-difot-switch.md) — 2026-11-03 moving from the sandbox to the teammate's real app: what changed in it, questions, plan
+
 ## Open items
 - [open-items.md](open-items.md) — waiting on real SKU list + sample price PDF
