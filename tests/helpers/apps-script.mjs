@@ -6,8 +6,20 @@ import { createContext, Script } from 'node:vm';
 import { createHash, randomUUID } from 'node:crypto';
 import { ROOT } from '../../scripts/lib/checks.mjs';
 
-// Headers as they were in the sandbox sheet before setup() (2026-10-22 read of DIFOT_Pilot_SU22 copy).
+// Headers of the REAL DIFOT sheet (DIFOT_Pilot_SU22, the teammate's "BiTFODG Pilot" app) before setup(), read 2026-11-04.
+// SmartMenu writes there from 2026-11-04. KPI_Cal / App_Filter are left out: the code never touches them.
 export const ORIGINAL_HEADERS = {
+  Order: ['Order_ID', 'Shop_ID', 'Source', 'Channel', 'Created_By', 'Order_Date', 'T1_Ordered', 'T2_Saved', 'Customer_ID',
+    'Req_Date', 'Req_Slot', 'Promise_P', 'Delivery_Mode', 'Note', 'T_Accept', 'Accepted_By', 'Reject_Reason', 'T3_Packed',
+    'Picked_By', 'T4_Pickup', 'T5_Delivered', 'Delivered_By', 'Delivery_Photo', 'Customer_Issue', 'Status'],
+  Master: ['Code', 'Type', 'Name', 'Category', 'Sort_Order', 'Value', 'Active', 'Shop_ID', 'Unit', 'Price'],
+  Event: ['Event_ID', 'Order_ID', 'Shop_ID', 'Station', 'Action', 'Timestamp', 'User', 'Photo', 'Note'],
+  Exception: ['Exception_ID', 'Order_ID', 'Shop_ID', 'Stage', 'SKU_Code', 'Reason_Code', 'Other_Note', 'Logged_At', 'Logged_By'],
+  Order_Line: ['Line_ID', 'Order_ID', 'SKU_Code', 'Unit', 'Qty_Ordered', 'Qty_Picked', 'Line_Status', 'Reason_Code', 'Unit_Price'],
+};
+
+// Headers of the old SANDBOX copy before setup() (2026-10-22 read of the DIFOT_Pilot_SU22 copy). Migrate.gs reads it.
+export const SANDBOX_HEADERS = {
   Order: ['Order_ID', 'Shop_ID', 'Order_Date', 'Customer_ID', 'Slip_Photo', 'T1_Ordered', 'T2_Slip_Saved', 'Promise_P',
     'Pick_Result', 'T3_Packed', 'Bag_Photo', 'T4_Pickup', 'Rider_Type', 'T5_Delivered', 'Delivery_Photo', 'Customer_Issue', 'Status'],
   Master: ['Code', 'Type', 'Name', 'Category', 'Sort_Order', 'Value', 'Active', 'Shop_ID'],
@@ -41,10 +53,13 @@ class FakeRange {
 
 // Sheets stores "'0812345678" as the text 0812345678 (the apostrophe only stops it becoming a number or a formula).
 // Any other text starting with = becomes a formula; it is kept as FORMULA(...) so a test can see it happened.
+// Like Google Sheets: a leading ' keeps text as text; =… is a formula; text that looks like a number becomes a number
+// (so "0812345678" loses its 0 and "2E45678923" overflows, unless written with the ').
 const stored = v => {
   if (typeof v !== 'string') return v;
   if (v.startsWith("'")) return v.slice(1);
-  return v.startsWith('=') ? `FORMULA(${v})` : v;
+  if (v.startsWith('=')) return `FORMULA(${v})`;
+  return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(v.trim()) ? Number(v) : v;
 };
 
 export class FakeSheet {
@@ -70,8 +85,8 @@ export class FakeSheet {
 }
 
 export class FakeSpreadsheet {
-  constructor() {
-    this.sheets = new Map(Object.entries(ORIGINAL_HEADERS).map(([n, h]) => [n, new FakeSheet(n, [h])]));
+  constructor(headers = ORIGINAL_HEADERS) {
+    this.sheets = new Map(Object.entries(headers).map(([n, h]) => [n, new FakeSheet(n, [h])]));
   }
   getSheetByName(n) { return this.sheets.get(n) || null; }
   insertSheet(n) {
@@ -116,6 +131,7 @@ function fakeDrive() {
       getName: () => fixedName || blob.getName(),
       getParents: () => iter(folders.has(f.folderId) ? [folders.get(f.folderId)] : []),
       moveTo(folder) { f.folderId = folder.getId(); return f; },
+      makeCopy(name, folder) { return file(blob ? new FakeBlob(signed(blob.data), blob.type, name) : null, folder.getId(), null, blob ? null : name); },
       setTrashed(v) { f.trashed = v; return f; },
     };
     files.set(id, f);
@@ -146,15 +162,17 @@ function fakeDrive() {
  * directly), the fake spreadsheet, and post(body) which goes through doPost exactly like the site's fetch does.
  * `user` is who opened the web app ('' = not signed in, as on the public order deployment); `owner` runs the script.
  */
-export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Member.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
+export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Member.gs', 'Migrate.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
   const ss = new FakeSpreadsheet();
+  // Other spreadsheets by id (book(id) makes one, e.g. the sandbox for Migrate.gs); any other id opens `ss`.
+  const books = new Map();
   const cache = new Map();
   const properties = new Map(Object.entries(props));
   const drive = fakeDrive();
   const session = { user, owner };
   const ctx = createContext({
     console: { log() {}, error: console.error },
-    SpreadsheetApp: { openById: () => ss, flush() {} },
+    SpreadsheetApp: { openById: id => books.get(id) || ss, flush() {} },
     CacheService: { getScriptCache: () => ({ get: k => (cache.has(k) ? cache.get(k) : null), put: (k, v) => { cache.set(k, String(v)); }, remove: k => { cache.delete(k); } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType() { return this; }, getContent: () => s }) },
@@ -191,7 +209,8 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Memb
     drive.addFile(new Script('SHEET_ID').runInContext(ctx), 'DIFOT sandbox', appFolder.getId());
   }
   const post = body => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent());
-  return { ctx, ss, cache, post, sheet: n => ss.getSheetByName(n), drive, properties, session };
+  const book = (id, headers = SANDBOX_HEADERS) => { const s = new FakeSpreadsheet(headers); books.set(id, s); return s; };
+  return { ctx, ss, cache, post, sheet: n => ss.getSheetByName(n), drive, properties, session, book };
 }
 
 /** A valid guest order (order.v1) with hand-checked totals: 3 kg × ฿80 + 2 kg × ฿65 = ฿370. */

@@ -2,7 +2,7 @@
 
 ## 2026-11-03 — complaints with photos BUILT (local, not deployed/pushed) + real-DIFOT switch needs answers
 - Complaints: see [complaints.md](complaints.md) — Apps Script v14 + setup() + AppSheet Exception DONE 2026-11-03 19:50; Petch to push the site, then iPhone test.
-- Switch to the teammate's real app: see [real-difot-switch.md](real-difot-switch.md). The real Order table was rebuilt (accept step, Req_Date/Slot, Thai Source/Channel) → Code.gs order writing must be remapped first; 6 questions for the teammate listed there. Complaints already fit the real sheet.
+- 2026-11-04: SWITCHED to the teammate's real app (Apps Script v15, members moved) — see [real-difot-switch.md](real-difot-switch.md). Petch: push site + first test order.
 
 ## 2026-10-27 — login by phone OR shop name: LIVE (Apps Script v13 + site ?v=2026-10-27a), iPhone test left
 Done by Claude (Petch asked "ทำให้หน่อย"): Apps Script files replaced (sha256 = repo), setup() ran (Login_Name added),

@@ -18,10 +18,10 @@ test('guest order writes one Order, its items, one Event and a new customer', ()
 
   const [order] = sheet('Order').records();
   assert.equal(order.Order_ID, res.order_id);
-  assert.equal(order.Source, 'Web');
+  assert.equal(order.Source, 'SmartMenu');
   assert.equal(order.Customer_ID, 'CUS-W001');
   assert.equal(order.Web_Total, 370);
-  assert.equal(order.Status, 'Received');
+  assert.equal(order.Status, 'Accepted');
 
   const items = sheet('Order_Items').records();
   assert.deepEqual(items.map(i => [i.SKU, i.Qty, i.Unit_Price, i.Line_Total]), [['PK-001', 3, 80, 240], ['CK-001', 2, 65, 130]]);
@@ -31,7 +31,7 @@ test('guest order writes one Order, its items, one Event and a new customer', ()
   assert.equal(events.length, 1);
   assert.equal(events[0].Action, 'Ordered');
 
-  const [customer] = sheet('Master').records();
+  const [customer] = sheet('Master').records().filter(r => r.Type === 'Customer');
   assert.equal(customer.Code, 'CUS-W001');
   assert.equal(customer.Phone, '0812345678');
 });
@@ -41,7 +41,7 @@ test('a second guest order from the same phone reuses the customer', () => {
   post(guestOrder());
   const res = post(guestOrder({ client_order_id: 'second-order-0001' }));
   assert.equal(res.ok, true);
-  assert.equal(sheet('Master').records().length, 1);
+  assert.equal(sheet('Master').records().filter(r => r.Type === 'Customer').length, 1);
   assert.deepEqual(sheet('Order').records().map(o => o.Customer_ID), ['CUS-W001', 'CUS-W001']);
 });
 
@@ -77,8 +77,8 @@ test('a shop-QR order takes the shop from Master, not from the browser', () => {
   assert.equal(order.Customer_ID, 'CUS-W010');
   assert.equal(order.Web_Shop_Name, 'Shop A');
   assert.equal(order.Web_Phone, '0811111111');
-  assert.match(order.Web_Note, /^1 Sukhumvit Rd/);
-  assert.equal(sheet('Master').records().length, 1, 'no new customer row for a shop-QR order');
+  assert.match(order.Note, /^1 Sukhumvit Rd/);
+  assert.equal(sheet('Master').records().filter(r => r.Type === 'Customer').length, 1, 'no new customer row for a shop-QR order');
 });
 
 // ---- Phase 1: how each order was identified, and the category of each line (for History / Analytics) ----
@@ -141,8 +141,8 @@ test('a guest order writes formula-looking text as plain text everywhere', () =>
   assert.deepEqual(noFormulas(ss), []);
   const [order] = sheet('Order').records();
   assert.equal(order.Web_Shop_Name, NASTY[0]);
-  assert.equal(order.Web_Note, `${NASTY[2]} | ${NASTY[0]} | LINE: ${NASTY[3]}`);
-  const [c] = sheet('Master').records();
+  assert.equal(order.Note, `${NASTY[2]} | ${NASTY[0]} | ติดต่อ: ${NASTY[1]} | โทร 0812345678 | LINE: ${NASTY[3]}`);
+  const [c] = sheet('Master').records().filter(r => r.Type === 'Customer');
   assert.deepEqual([c.Name, c.Contact_Name, c.LINE_Name, c.Address], [NASTY[0], NASTY[1], NASTY[3], NASTY[2]]);
   const [item] = sheet('Order_Items').records();
   assert.deepEqual([item.Name_TH, item.Qty_Unit], [NASTY[0], '=kg']);

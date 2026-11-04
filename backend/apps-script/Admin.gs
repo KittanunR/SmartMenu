@@ -75,7 +75,7 @@ function adminCreateShop(form) {
     appendByHeader_(m.sheet, {
       Code: id, Type: 'Customer', Name: f.name, Category: 'Web', Active: 'Yes', Shop_ID: SHOP_ID,
       Phone: "'" + f.phone, Source: 'Admin', Address: f.address, Contact_Name: f.contact,
-      LINE_Name: f.line, Shop_Code: code, Shop_Link: SITE_URL + '?shop=' + code, Member_Status: 'active'
+      LINE_Name: f.line, Shop_Code: "'" + code, Shop_Link: SITE_URL + '?shop=' + code, Member_Status: 'active'
     });
     const now = new Date();
     const temp = setTempPassword_(ss, id, f.phone, f.login, now);
@@ -129,7 +129,7 @@ function adminIssuePassword(id) {
     // A guest customer has no shop code yet; a member gets one so staff can also give it a QR.
     if (!m.str(r, 'Shop_Code')) {
       const code = uniqueShopCode_(m);
-      m.set(r, { Shop_Code: code, Shop_Link: SITE_URL + '?shop=' + code });
+      m.set(r, { Shop_Code: "'" + code, Shop_Link: SITE_URL + '?shop=' + code });
     }
     m.set(r, { Member_Status: 'active' });
     const now = new Date();

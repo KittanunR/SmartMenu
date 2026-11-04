@@ -179,7 +179,9 @@ function history_(o) {
     const id = orders.str(r, 'Order_ID');
     const until = complainUntil_(orders, r);
     const n = counts[id] || 0;
-    byId[id] = { id, ordered_at: iso_(at), delivery_date: dayText_(orders.get(r, 'Web_Delivery_Date')),
+    // Req_Date in the real DIFOT sheet (2026-11-04); Web_Delivery_Date on rows written to the old sandbox.
+    const day = dayText_(orders.get(r, 'Req_Date')) || dayText_(orders.get(r, 'Web_Delivery_Date'));
+    byId[id] = { id, ordered_at: iso_(at), delivery_date: day,
       total: Number(orders.get(r, 'Web_Total')) || 0, status: orders.str(r, 'Status'), items: [],
       complain_until: until && until.getTime() > Date.now() && n < COMPLAINTS_PER_ORDER ? iso_(until) : '', complaints: n };
     return byId[id];

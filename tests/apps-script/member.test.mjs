@@ -325,8 +325,8 @@ test('a member order takes the shop from Master and is marked Auth = member', ()
   assert.equal(o.Auth, 'member');
   assert.equal(o.Web_Shop_Name, 'Café Sukhumvit');
   assert.equal(o.Web_Phone, PHONE);
-  assert.match(o.Web_Note, /^22 Sukhumvit Soi 22/);
-  assert.equal(b.sheet('Master').records().length, 1, 'no new customer row');
+  assert.match(o.Note, /^22 Sukhumvit Soi 22/);
+  assert.equal(b.sheet('Master').records().filter(r => r.Type === 'Customer').length, 1, 'no new customer row');
   assert.match(b.sheet('Event').records()[0].Note, /member/);
 });
 

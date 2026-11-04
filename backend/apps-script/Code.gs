@@ -1,18 +1,29 @@
 /**
- * SmartMenu → DIFOT order intake (Google Apps Script, standalone project in btgs.sukhumvit Drive, writes to the SANDBOX sheet).
+ * SmartMenu → DIFOT order intake (Google Apps Script, standalone project in btgs.sukhumvit Drive).
+ * Writes to the REAL DIFOT app's sheet (teammate's "BiTFODG Pilot", DIFOT_Pilot_SU22) since 2026-11-04; before that a
+ * sandbox copy. A web order lands as Status "Accepted" (Petch, 2026-11-04), so it goes straight to the app's packing list.
  * Contract: docs/ORDER_CONTRACT.md (order.v1). Orders only ever APPEND rows; never edit or delete.
  * One exception (2026-11-03): a shop's complaint (Member.gs complain_) sets Status = Issue and Customer_Issue on that
  * shop's own delivered order, as the DIFOT app's own "Customer Issue" step does.
  * The exceptions are run by hand and only fill EMPTY cells: makeShopCodes() (Master.Shop_Code / Shop_Link) and
  * backfillCategories() (Order_Items.Category).
- * Sandbox sheet id 1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg (2026-10-22).
  */
-const SHEET_ID = '1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg'; // SANDBOX copy. Never the original DIFOT_Pilot_SU22.
+const SHEET_ID = '1UEIDEDJOoue21ClryiWv55b1SnfrPN_gw6yE3ktxvx8';          // REAL: DIFOT_Pilot_SU22 (from 2026-11-04)
+const SANDBOX_SHEET_ID = '1e8xEJsYsWDT4ffvOkiqvVAJVeeSobtkU9wJMN1lISAg';  // old sandbox copy; Migrate.gs reads members from it
 const SHOP_ID = 'SU22';
 const TZ = 'Asia/Bangkok';
 const SITE_URL = 'https://kittanunr.github.io/SmartMenu/';
 // Auth = how the order was identified: 'guest' (typed form), 'shop_qr' (shop's own link), 'member' (logged in).
-const ORDER_EXTRA_COLS = ['Source', 'Web_Shop_Name', 'Web_Phone', 'Web_Delivery_Date', 'Web_Note', 'Web_Total', 'Web_Client_ID', 'Auth'];
+// The real Order has its own Source, Note and Req_Date (2026-11-04), so only what it has no column for is added.
+const ORDER_EXTRA_COLS = ['Source', 'Web_Shop_Name', 'Web_Phone', 'Web_Total', 'Web_Client_ID', 'Auth'];
+// A web order in the DIFOT app's own terms (read from its column rules 2026-11-04). Status Accepted = what the app
+// gives every order not from LINE OA; Created_By / Accepted_By stay empty (no staff made it). The site asks for a day,
+// not a time: Req_Slot = the last delivery round of the day (Master Setting SET-SLOT-END).
+const WEB_ORDER = { status: 'Accepted', source: 'SmartMenu', channel: 'เว็บ', deliveryMode: 'ไรเดอร์ร้าน',
+  slotSetting: 'SET-SLOT-END', slotDefault: '17:00' };
+// Our SKUs become Master rows (Type SKU) the first time they are ordered, so the app can pick their Order_Line rows.
+const SKU_MASTER_CATEGORY = { PK: 'Pork', CK: 'Chicken', EG: 'Egg', FS: 'Fish' };
+const UNIT_TH = { kg: 'กก.', tray: 'แผง', pack: 'แพ็ค' };
 const MAX_BODY = 30000;            // chars; a real 40-line order is ~8,000
 const MAX_COMPLAINT_BODY = 2700000; // a complaint carries up to 3 photos of ≤ 600 KB (base64 ≈ 800 K chars each)
 const LOCK_WAIT_MS = 20000;        // then answer 'busy' and let the site retry
@@ -106,7 +117,7 @@ function makeShopCodes() {
     let code;
     do { code = newShopCode_(); } while (used[code]);
     used[code] = true;
-    sh.getRange(r + 1, iCode + 1, 1, 1).setValue(code);
+    sh.getRange(r + 1, iCode + 1, 1, 1).setValue("'" + code);   // ' = text: a code like 2E45678923 would otherwise become a number
     sh.getRange(r + 1, iLink + 1, 1, 1).setValue(SITE_URL + '?shop=' + code);
     made++;
   }
@@ -232,11 +243,11 @@ function doPost(e) {
     const orderId = nextOrderId_(orders, now);
 
     appendByHeader_(orders, {
-      Order_ID: orderId, Shop_ID: SHOP_ID, Order_Date: now, Customer_ID: customerId,
-      T1_Ordered: now, Status: 'Received', Customer_Issue: false,
-      Source: 'Web', Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
-      Web_Delivery_Date: (o.delivery && o.delivery.date) || '',
-      Web_Note: [o.delivery && o.delivery.address_note, o.note, o.customer.line_name && ('LINE: ' + o.customer.line_name)].filter(Boolean).join(' | '),
+      Order_ID: orderId, Shop_ID: SHOP_ID, Source: WEB_ORDER.source, Channel: WEB_ORDER.channel,
+      Order_Date: now, T1_Ordered: now, T2_Saved: now, Customer_ID: customerId,
+      Req_Date: (o.delivery && o.delivery.date) || Utilities.formatDate(now, TZ, 'yyyy-MM-dd'), Req_Slot: deliverySlot_(ss),
+      Delivery_Mode: WEB_ORDER.deliveryMode, Note: orderNote_(o), T_Accept: now, Customer_Issue: false, Status: WEB_ORDER.status,
+      Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: member ? 'member' : shop ? 'shop_qr' : 'guest'
     });
 
@@ -244,6 +255,16 @@ function doPost(e) {
       Item_ID: orderId + '-' + (i + 1), Order_ID: orderId, SKU: it.sku, Name_TH: it.name_th,
       Qty: it.qty, Qty_Unit: it.qty_unit, Unit_Price: it.unit_price, Line_Total: it.line_total, Category: categoryOf_(it.sku)
     })));
+
+    // The DIFOT app's own lines (it picks from these): one per item, SKU known to its Master.
+    const appLines = ss.getSheetByName('Order_Line');
+    if (appLines) {
+      ensureSkus_(ss, o.items);
+      appendRowsByHeader_(appLines, o.items.map((it, i) => ({
+        Line_ID: orderId + '-' + (i + 1), Order_ID: orderId, SKU_Code: it.sku, Unit: UNIT_TH[it.qty_unit] || it.qty_unit,
+        Qty_Ordered: it.qty, Unit_Price: it.unit_price
+      })));
+    }
 
     appendByHeader_(ss.getSheetByName('Event'), {
       Event_ID: 'EW' + Utilities.getUuid().slice(0, 8), Order_ID: orderId, Shop_ID: SHOP_ID,
@@ -290,6 +311,48 @@ function validate_(o) {
   }
   if (Math.abs(sum - o.total) > 0.05) return 'total';
   return null;
+}
+
+/** What the shop staff read on the order: address, note, who to call. */
+function orderNote_(o) {
+  const c = o.customer || {};
+  return [o.delivery && o.delivery.address_note, o.note, c.contact_name && ('ติดต่อ: ' + c.contact_name),
+    c.phone && ('โทร ' + c.phone), c.line_name && ('LINE: ' + c.line_name)].filter(Boolean).join(' | ');
+}
+
+/** The delivery round a web order gets: Master Setting SET-SLOT-END (e.g. 17:00), else 17:00. */
+function deliverySlot_(ss) {
+  const m = ss.getSheetByName('Master').getDataRange().getValues();
+  const iCode = m[0].indexOf('Code'), iValue = m[0].indexOf('Value');
+  for (let r = 1; r < m.length; r++) {
+    if (m[r][iCode] !== WEB_ORDER.slotSetting) continue;
+    const v = m[r][iValue];
+    if (v && typeof v.getTime === 'function') return Utilities.formatDate(v, TZ, 'HH:mm');
+    if (/^\d{1,2}:\d{2}/.test(String(v))) return String(v).slice(0, 5).padStart(5, '0');
+  }
+  return WEB_ORDER.slotDefault;
+}
+
+/** Adds each SKU the app's Master does not list yet (Type SKU, active), after its last Sort_Order. */
+function ensureSkus_(ss, items) {
+  const sh = ss.getSheetByName('Master');
+  const data = sh.getDataRange().getValues();
+  const h = data[0];
+  const known = {};
+  let sort = 0;
+  data.slice(1).forEach(row => {
+    known[row[h.indexOf('Code')]] = true;
+    if (row[h.indexOf('Type')] === 'SKU') sort = Math.max(sort, Number(row[h.indexOf('Sort_Order')]) || 0);
+  });
+  const add = [];
+  items.forEach(it => {
+    if (known[it.sku]) return;
+    known[it.sku] = true;
+    add.push({ Code: it.sku, Type: 'SKU', Name: String(it.name_th || it.sku).slice(0, 120),
+      Category: SKU_MASTER_CATEGORY[String(it.sku).slice(0, 2)] || 'Other', Sort_Order: ++sort, Value: '',
+      Active: 'Yes', Shop_ID: SHOP_ID, Unit: UNIT_TH[it.qty_unit] || it.qty_unit, Source: 'Web' });
+  });
+  appendRowsByHeader_(sh, add);
 }
 
 /** The Order_ID already written for this client_order_id, or '' (only the most recent rows are read). */

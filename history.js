@@ -87,7 +87,8 @@
       cpClose: 'ปิด',
       unit: (u) => ({ kg: 'กก.', tray: 'แผง', pack: 'แพ็ก' }[u] || u),
       status: {
-        New: 'รอร้านยืนยัน', Received: 'รับออเดอร์แล้ว', Packed: 'จัดของแล้ว', Out: 'กำลังไปส่ง',
+        New: 'รอร้านยืนยัน', Received: 'รับออเดอร์แล้ว', Accepted: 'รับออเดอร์แล้ว', Rejected: 'ร้านรับออเดอร์ไม่ได้ ร้านจะติดต่อกลับ',
+        Packed: 'จัดของแล้ว', Out: 'กำลังไปส่ง',
         Delivered: 'ส่งแล้ว', Issue: 'มีปัญหา ร้านจะติดต่อกลับ',
       },
     },
@@ -159,13 +160,15 @@
       cpClose: 'Close',
       unit: (u, n) => ({ kg: 'kg', tray: n === 1 ? 'tray' : 'trays', pack: n === 1 ? 'pack' : 'packs' }[u] || u),
       status: {
-        New: 'Waiting for the shop', Received: 'Received', Packed: 'Packed', Out: 'On the way',
+        New: 'Waiting for the shop', Received: 'Received', Accepted: 'Received', Rejected: "Can't be filled, we'll contact you",
+        Packed: 'Packed', Out: 'On the way',
         Delivered: 'Delivered', Issue: "Problem — we'll contact you",
       },
     },
   };
   // Pill look per DIFOT status (styles.css .pill--*); anything else gets the plain look.
-  const STATUS_LOOK = { New: 'wait', Received: 'wait', Packed: 'wait', Out: 'out', Delivered: 'done', Issue: 'issue' };
+  // Accepted / Rejected: the real DIFOT app's names (2026-11-04); Received: orders from the old sandbox.
+  const STATUS_LOOK = { New: 'wait', Received: 'wait', Accepted: 'wait', Packed: 'wait', Out: 'out', Delivered: 'done', Issue: 'issue', Rejected: 'issue' };
 
   // Japanese, Chinese, Korean and Hindi from i18n.js, over English so a missing text shows in English.
   const I18N = window.SM_I18N || null;

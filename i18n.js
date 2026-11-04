@@ -727,7 +727,7 @@ window.SM_I18N = (function () {
       cpClose: '閉じる',
       unit: (x) => u('ja', x),
       status: {
-        New: 'お店の確認待ち', Received: '受付済み', Packed: '準備完了', Out: '配達中',
+        New: 'お店の確認待ち', Received: '受付済み', Accepted: '受付済み', Rejected: 'ご用意できません・お店からご連絡します', Packed: '準備完了', Out: '配達中',
         Delivered: '配達済み', Issue: '問題あり・お店からご連絡します',
       },
     },
@@ -800,7 +800,7 @@ window.SM_I18N = (function () {
       cpClose: '关闭',
       unit: (x) => u('zh', x),
       status: {
-        New: '等待商店确认', Received: '已接单', Packed: '已备货', Out: '配送中',
+        New: '等待商店确认', Received: '已接单', Accepted: '已接单', Rejected: '无法供货，商店会联系您', Packed: '已备货', Out: '配送中',
         Delivered: '已送达', Issue: '有问题，商店会联系您',
       },
     },
@@ -873,7 +873,7 @@ window.SM_I18N = (function () {
       cpClose: '닫기',
       unit: (x) => u('ko', x),
       status: {
-        New: '가게 확인 대기', Received: '접수됨', Packed: '준비 완료', Out: '배송 중',
+        New: '가게 확인 대기', Received: '접수됨', Accepted: '접수됨', Rejected: '주문을 받을 수 없음 · 가게에서 연락드립니다', Packed: '준비 완료', Out: '배송 중',
         Delivered: '배송 완료', Issue: '문제 발생 · 가게에서 연락드립니다',
       },
     },
@@ -946,7 +946,7 @@ window.SM_I18N = (function () {
       cpClose: 'बंद करें',
       unit: (x) => u('hi', x),
       status: {
-        New: 'दुकान की पुष्टि बाकी', Received: 'मिल गया', Packed: 'पैक हो गया', Out: 'रास्ते में',
+        New: 'दुकान की पुष्टि बाकी', Received: 'मिल गया', Accepted: 'मिल गया', Rejected: 'ऑर्डर पूरा नहीं हो सकता — हम संपर्क करेंगे', Packed: 'पैक हो गया', Out: 'रास्ते में',
         Delivered: 'डिलीवर हो गया', Issue: 'समस्या है — हम संपर्क करेंगे',
       },
     },

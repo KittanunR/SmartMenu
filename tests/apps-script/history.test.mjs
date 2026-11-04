@@ -26,7 +26,7 @@ function ready() {
   b.addOrder = ({ id, customer, auth, daysAgo = 0, status = 'Received', delivery = '2026-10-25', total = 100, sku = 'PK-001' }) => {
     const put = (tab, row) => { const s = b.sheet(tab); s.appendRow(s.header().map(h => row[h] ?? '')); };
     put('Order', { Order_ID: id, Shop_ID: 'SU22', Order_Date: new Date(Date.now() - daysAgo * DAY), Customer_ID: customer,
-      Status: status, Source: 'Web', Web_Phone: PHONE, Web_Note: '22 Sukhumvit Soi 22 | LINE: ken', Web_Delivery_Date: delivery,
+      Status: status, Source: 'SmartMenu', Web_Phone: PHONE, Note: '22 Sukhumvit Soi 22 | LINE: ken', Req_Date: delivery,
       Web_Total: total, Auth: auth });
     put('Order_Items', { Item_ID: id + '-1', Order_ID: id, SKU: sku, Name_TH: 'หมู', Qty: 2, Qty_Unit: 'kg', Unit_Price: 50, Line_Total: total });
   };
@@ -46,7 +46,7 @@ test('history: the shop\'s own member and shop-QR orders, newest first, each wit
   assert.deepEqual(res.orders.map(o => o.id).slice(1), ['W261010-001', 'W261001-001']);
   const [today] = res.orders;
   assert.equal(today.total, 370);
-  assert.equal(today.status, 'Received');
+  assert.equal(today.status, 'Accepted');
   assert.equal(today.delivery_date, '2026-10-25');
   assert.ok(!Number.isNaN(Date.parse(today.ordered_at)));
   assert.deepEqual(today.items, [
