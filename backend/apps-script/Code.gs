@@ -242,10 +242,14 @@ function doPost(e) {
     const customerId = shop ? shop.id : findOrCreateCustomer_(ss, o.customer, (o.delivery && o.delivery.address_note) || '');
     const orderId = nextOrderId_(orders, now);
 
+    // Promise_P is an app formula in the DIFOT app (Req_Date + Req_Slot): AppSheet only fills it for rows made in the
+    // app, and its KPI sheet (on time %) reads it, so a web order writes it too.
+    const reqDate = (o.delivery && o.delivery.date) || Utilities.formatDate(now, TZ, 'yyyy-MM-dd');
+    const slot = deliverySlot_(ss);
     appendByHeader_(orders, {
       Order_ID: orderId, Shop_ID: SHOP_ID, Source: WEB_ORDER.source, Channel: WEB_ORDER.channel,
       Order_Date: now, T1_Ordered: now, T2_Saved: now, Customer_ID: customerId,
-      Req_Date: (o.delivery && o.delivery.date) || Utilities.formatDate(now, TZ, 'yyyy-MM-dd'), Req_Slot: deliverySlot_(ss),
+      Req_Date: reqDate, Req_Slot: slot, Promise_P: reqDate + ' ' + slot,
       Delivery_Mode: WEB_ORDER.deliveryMode, Note: orderNote_(o), T_Accept: now, Customer_Issue: false, Status: WEB_ORDER.status,
       Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: member ? 'member' : shop ? 'shop_qr' : 'guest'

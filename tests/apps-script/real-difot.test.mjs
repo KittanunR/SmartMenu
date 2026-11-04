@@ -26,6 +26,7 @@ test('a web order is Accepted at once and fills the columns the DIFOT app reads'
   assert.equal(o.Delivery_Mode, 'ไรเดอร์ร้าน');
   assert.equal(o.Req_Date, '2026-10-25');
   assert.equal(o.Req_Slot, '17:00');
+  assert.equal(o.Promise_P, '2026-10-25 17:00');   // the app's KPI sheet reads it; Sheets makes it a date-time
   assert.equal(typeof o.T1_Ordered.getTime, 'function');
   assert.equal(typeof o.T2_Saved.getTime, 'function');
   assert.equal(o.Customer_Issue, false);
