@@ -11,7 +11,7 @@ const DAY = 24 * 3600 * 1000;
 const isDate = v => Object.prototype.toString.call(v) === '[object Date]'; // dates made inside the vm are another realm's Date
 
 function ready(opts = {}) {
-  const b = loadBackend({ user: OWNER, ...opts });
+  const b = loadBackend({ user: OWNER, oldOrderRules: true, ...opts });
   b.ctx.setup();
   b.call = (fn, ...args) => JSON.parse(JSON.stringify(b.ctx[fn](...args)));
   // Same check Phase 3's login will make: the shop types the temp password with or without the dash.

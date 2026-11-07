@@ -30,7 +30,7 @@ test('setup adds Category to an Order_Items tab made by an earlier setup', () =>
 });
 
 test('running setup again changes nothing and keeps the data', () => {
-  const { ctx, ss, post } = loadBackend();
+  const { ctx, ss, post } = loadBackend({ oldOrderRules: true });
   ctx.setup();
   post(guestOrder());
   const before = JSON.stringify([...ss.sheets].map(([n, s]) => [n, s.cells]));

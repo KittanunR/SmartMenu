@@ -1,11 +1,12 @@
-// Order intake (doPost) — the live guest and shop-QR flows. These pin today's behaviour so account work cannot break it.
+// Order intake (doPost) — how a web order is written (Order, items, Event, customer). Built with guest and shop-QR orders,
+// which the server refuses since 2026-11-07 (login + ฿500 minimum, see order-rules.test.mjs), so these run with oldOrderRules.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadBackend, guestOrder, addShop } from '../helpers/apps-script.mjs';
 import { readJson, CATALOG_PATH } from '../../scripts/lib/checks.mjs';
 
 function ready() {
-  const b = loadBackend();
+  const b = loadBackend({ oldOrderRules: true });
   b.ctx.setup();
   return b;
 }

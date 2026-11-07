@@ -162,7 +162,7 @@ function fakeDrive() {
  * directly), the fake spreadsheet, and post(body) which goes through doPost exactly like the site's fetch does.
  * `user` is who opened the web app ('' = not signed in, as on the public order deployment); `owner` runs the script.
  */
-export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Member.gs', 'Migrate.gs'], user = '', owner = 'owner@example.com', props = {} } = {}) {
+export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Member.gs', 'Migrate.gs'], user = '', owner = 'owner@example.com', props = {}, oldOrderRules = false } = {}) {
   const ss = new FakeSpreadsheet();
   // Other spreadsheets by id (book(id) makes one, e.g. the sandbox for Migrate.gs); any other id opens `ss`.
   const books = new Map();
@@ -207,6 +207,12 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Memb
   if (files.includes('Code.gs')) {
     const appFolder = drive.api.createFolder('SmartMenuSandboxDIFOT-93916087');
     drive.addFile(new Script('SHEET_ID').runInContext(ctx), 'DIFOT sandbox', appFolder.getId());
+  }
+  // Since 2026-11-07 only a logged-in shop may order, for ฿500 or more (Code.gs ORDER_RULES; order-rules.test.mjs).
+  // Older tests build their data with guest / shop-QR orders of ฿370 to test how rows are written; they pass
+  // oldOrderRules: true to switch both rules off. Every new test should leave the real rules on.
+  if (oldOrderRules && files.includes('Code.gs')) {
+    new Script('ORDER_RULES.loginRequired = false; ORDER_RULES.minTotal = 0;').runInContext(ctx);
   }
   const post = body => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent());
   const book = (id, headers = SANDBOX_HEADERS) => { const s = new FakeSpreadsheet(headers); books.set(id, s); return s; };

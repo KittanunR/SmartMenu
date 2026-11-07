@@ -1,8 +1,8 @@
 {
-  "effective_date": "2026-10-31",
-  "valid_from": "2026-10-31",
-  "valid_to": "2026-11-06",
-  "source_file": "73744194-image.jpg (pork) + 96dd2005-image.jpg (chicken, eggs) — sheet 31/10/2026-06/11/2026; top tier now 11 kg+/11 trays+ (was 6+)",
+  "effective_date": "2026-11-07",
+  "valid_from": "2026-11-07",
+  "valid_to": "2026-11-13",
+  "source_file": "1.jpg (pork) + 2.jpg (chicken, eggs) — sheet printed 07/10/2026-09/11/2026 (typo); Petch confirmed 07/11-13/11/2026",
   "extracted_by": "claude",
   "currency": "THB",
   "prices": [
@@ -353,16 +353,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 166
+          "price": 168
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 159
+          "price": 161
         },
         {
           "min_qty": 11,
-          "price": 157
+          "price": 159
         }
       ]
     },
@@ -373,16 +373,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 202
+          "price": 204
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 197
+          "price": 199
         },
         {
           "min_qty": 11,
-          "price": 193
+          "price": 195
         }
       ]
     },
@@ -393,16 +393,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 227
+          "price": 230
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 220
+          "price": 223
         },
         {
           "min_qty": 11,
-          "price": 215
+          "price": 218
         }
       ]
     },
@@ -448,16 +448,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 107
+          "price": 109
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 100
+          "price": 102
         },
         {
           "min_qty": 11,
-          "price": 93
+          "price": 95
         }
       ]
     },
@@ -683,16 +683,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 54
+          "price": 52
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 50
+          "price": 48
         },
         {
           "min_qty": 11,
-          "price": 48
+          "price": 45
         }
       ]
     },
@@ -738,16 +738,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 97
+          "price": 95
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 92
+          "price": 90
         },
         {
           "min_qty": 11,
-          "price": 90
+          "price": 88
         }
       ]
     },
@@ -758,16 +758,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 88
+          "price": 86
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 83
+          "price": 81
         },
         {
           "min_qty": 11,
-          "price": 81
+          "price": 78
         }
       ]
     },
@@ -828,16 +828,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 100
+          "price": 99
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 95
+          "price": 94
         },
         {
           "min_qty": 11,
-          "price": 93
+          "price": 92
         }
       ]
     },
@@ -873,11 +873,11 @@
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 114
+          "price": 115
         },
         {
           "min_qty": 11,
-          "price": 102
+          "price": 105
         }
       ]
     },
@@ -928,7 +928,7 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 104
+          "price": 102
         },
         {
           "min_qty": 3,
@@ -968,12 +968,12 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 62
+          "price": 59
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 57
+          "price": 55
         },
         {
           "min_qty": 11,
@@ -1027,7 +1027,7 @@
       "tiers": [
         {
           "min_qty": 1,
-          "price": 172
+          "price": 176
         }
       ]
     },
@@ -1158,16 +1158,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 165
+          "price": 162
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 162
+          "price": 159
         },
         {
           "min_qty": 11,
-          "price": 159
+          "price": 156
         }
       ]
     },
@@ -1178,16 +1178,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 152
+          "price": 149
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 149
+          "price": 146
         },
         {
           "min_qty": 11,
-          "price": 146
+          "price": 143
         }
       ]
     },
@@ -1198,16 +1198,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 146
+          "price": 143
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 143
+          "price": 140
         },
         {
           "min_qty": 11,
-          "price": 140
+          "price": 137
         }
       ]
     },
@@ -1218,16 +1218,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 139
+          "price": 137
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 136
+          "price": 134
         },
         {
           "min_qty": 11,
-          "price": 133
+          "price": 131
         }
       ]
     },
@@ -1238,16 +1238,16 @@
         {
           "min_qty": 1,
           "max_qty": 2,
-          "price": 132
+          "price": 130
         },
         {
           "min_qty": 3,
           "max_qty": 10,
-          "price": 129
+          "price": 127
         },
         {
           "min_qty": 11,
-          "price": 126
+          "price": 124
         }
       ]
     },

@@ -7,7 +7,7 @@ import { loadBackend, guestOrder, SANDBOX_HEADERS } from '../helpers/apps-script
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
 function ready() {
-  const b = loadBackend();
+  const b = loadBackend({ oldOrderRules: true });
   b.ctx.setup();
   return b;
 }

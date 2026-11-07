@@ -24,6 +24,10 @@ const WEB_ORDER = { status: 'Accepted', source: 'SmartMenu', channel: 'เว็
 // Our SKUs become Master rows (Type SKU) the first time they are ordered, so the app can pick their Order_Line rows.
 const SKU_MASTER_CATEGORY = { PK: 'Pork', CK: 'Chicken', EG: 'Egg', FS: 'Fish' };
 const UNIT_TH = { kg: 'กก.', tray: 'แผง', pack: 'แพ็ค' };
+// Who may order and how much (Petch, 2026-11-07): only a logged-in shop (Member.gs session), and the goods must come
+// to at least ฿500. Delivery is free, so there is no fee to add: the check is on the goods only. app.js shows the same
+// rules (MIN_ORDER_THB); this is the check that counts. A guest or shop-QR order is refused with 'login_required'.
+const ORDER_RULES = { loginRequired: true, minTotal: 500 };
 const MAX_BODY = 30000;            // chars; a real 40-line order is ~8,000
 const MAX_COMPLAINT_BODY = 2700000; // a complaint carries up to 3 photos of ≤ 600 KB (base64 ≈ 800 K chars each)
 const LOCK_WAIT_MS = 20000;        // then answer 'busy' and let the site retry
@@ -292,6 +296,7 @@ function doPost(e) {
 function validate_(o) {
   if (!o || o.contract !== 'order.v1') return 'contract';
   if (o.hp) return 'spam';
+  if (ORDER_RULES.loginRequired && !o.session) return 'login_required';
   if (o.client_order_id != null && !/^[A-Za-z0-9-]{8,64}$/.test(String(o.client_order_id))) return 'client_order_id';
   if (o.shop_code != null && !/^[A-Z2-9]{10}$/.test(String(o.shop_code))) return 'shop_code';
   if (o.session != null && !TOKEN_RE.test(String(o.session))) return 'session';
@@ -314,6 +319,7 @@ function validate_(o) {
     sum += it.line_total;
   }
   if (Math.abs(sum - o.total) > 0.05) return 'total';
+  if (sum < ORDER_RULES.minTotal - 0.005) return 'min_order';
   return null;
 }
 

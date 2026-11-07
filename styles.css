@@ -454,6 +454,9 @@ img { display: block; max-width: 100%; }
 .cart__count { font-weight: 400; font-size: var(--t14); color: var(--grey); }
 .cart__total { font: 600 var(--t28)/1.1 var(--display); color: var(--forest); font-variant-numeric: tabular-nums; }
 .cart__fine { margin-top: var(--s2); font-size: var(--t12); color: var(--grey); }
+/* Minimum order ฿500 (2026-11-07): "฿x to go" until it is reached, then "free delivery". */
+.cart__min { margin-top: var(--s2); font: 500 var(--t14)/1.4 var(--text); color: var(--forest); }
+.cart__min.is-ok::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; vertical-align: 2px; border-radius: var(--r-pill); background: var(--leaf); }
 /* total + next / submit stay in reach while the list or form scrolls */
 .cart__foot {
   position: sticky; bottom: 0; z-index: 1;
@@ -569,7 +572,9 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
   text-decoration: underline; text-underline-offset: 3px;
 }
 .cover-link:focus-visible { outline-color: var(--white); }
-.cover__account { margin-top: var(--s1); }
+.cover__account { margin-top: var(--s1); display: flex; flex-wrap: wrap; column-gap: var(--s5); }
+/* Not logged in (2026-11-07): prices only, ordering needs a login. */
+.cover__guest { margin-top: var(--s1); font-size: var(--t14); color: var(--mint); text-wrap: pretty; }
 .cover--slim { padding-bottom: var(--s4); }
 .member { padding-bottom: var(--s6); }
 .member-page { max-width: 480px; padding-top: var(--s4); }
@@ -578,6 +583,8 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
 .member__go { display: flex; }
 .member__help { margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: var(--t14); color: var(--grey); }
 .member__line { margin-top: var(--s3); }
+.member__subtitle { font: 600 var(--t20)/1.3 var(--display); color: var(--forest); }
+.member__subtitle + p { margin-top: var(--s1); }
 .pw { position: relative; }
 .field .pw input { padding-right: 72px; }
 .pw__toggle {
@@ -586,7 +593,7 @@ html[lang="en"] .cover__as > :first-child { letter-spacing: .16em; text-transfor
 }
 .sprite { position: absolute; }
 @media (min-width: 640px) {
-  .cover__member, .cover__account { max-width: 696px; margin-left: auto; margin-right: auto; }
+  .cover__member, .cover__account, .cover__guest { max-width: 696px; margin-left: auto; margin-right: auto; }
   .cover__member { gap: var(--s5); padding: var(--s5); }
   .cover__member::before { left: var(--s5); }
   .cover__mark { width: 112px; height: 112px; padding: 6px; }

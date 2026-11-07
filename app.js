@@ -7,12 +7,17 @@
   const CATEGORIES = ['pork', 'chicken', 'egg', 'fish'];
   const MAX_QTY = 500;       // contract: qty > 0 and <= 500
   const MAX_LINES = 40;      // contract: 1–40 items
+  // Smallest order in baht, goods only: delivery is free (Petch, 2026-11-07). Code.gs ORDER_RULES.minTotal refuses less.
+  const MIN_ORDER_THB = 500;
+  const LOGIN_PAGE = 'member.html';
   const LINE_TEXT_MAX = 1000;
   const SUBMIT_TIMEOUT_MS = 30000;   // one attempt; Apps Script cold start + lock wait can take ~25 s
   const SUBMIT_BUDGET_MS = 75000;    // all attempts together, then the buyer gets the LINE fallback
   const RETRY_DELAYS_MS = [2000, 5000];
   // Server answers worth another try. Anything else (bad phone, rate limit, spam) will not change on retry.
   const RETRYABLE = new Set(['network', 'busy', 'server']);
+  // Server answers that mean "not allowed to order like this" (2026-11-07): no retry, no LINE summary.
+  const RULE_ERRORS = new Set(['session', 'login_required', 'min_order']);
 
   const UNIT = {
     th: { kg: 'กก.', tray: 'แผง', pack: 'แพ็ก' },
@@ -124,7 +129,16 @@
       memberWins: (n) => `เครื่องนี้เข้าสู่ระบบเป็นร้าน ${n} อยู่ ถ้าจะใช้ QR ของร้านอื่น ให้ออกจากระบบก่อน`,
       memberExpired: 'หมดเวลาเข้าสู่ระบบของร้าน เข้าสู่ระบบอีกครั้งได้ที่ "เข้าสู่ระบบร้านค้า"',
       loggedOut: 'ออกจากระบบแล้ว',
-      failSession: 'หมดเวลาเข้าสู่ระบบของร้าน ตะกร้ายังอยู่ครบ เข้าสู่ระบบอีกครั้ง หรือกรอกข้อมูลร้านแล้วกดสั่งใหม่',
+      failSession: 'หมดเวลาเข้าสู่ระบบของร้าน ตะกร้ายังอยู่ครบ เข้าสู่ระบบอีกครั้งแล้วกดสั่งใหม่',
+      // login before ordering + minimum order (2026-11-07)
+      guestNote: 'ดูราคาได้เลย สั่งซื้อออนไลน์ต้องเข้าสู่ระบบร้านค้าก่อน',
+      memberSignup: 'ยังไม่มีบัญชี? สมัครสมาชิก',
+      loginToOrder: (name) => `เข้าสู่ระบบเพื่อสั่ง ${name}`,
+      loginToOrderShort: 'เข้าสู่ระบบเพื่อสั่งซื้อ',
+      minLeft: (min, left) => `ยอดสั่งซื้อขั้นต่ำ ฿${min} · ขาดอีก ฿${left}`,
+      minOk: 'ส่งฟรี · ไม่มีค่าจัดส่ง',
+      failLogin: 'ต้องเข้าสู่ระบบร้านค้าก่อนสั่งซื้อ ตะกร้ายังอยู่ครบ เข้าสู่ระบบแล้วกดสั่งอีกครั้ง',
+      failMin: (min) => `ยอดสั่งซื้อขั้นต่ำ ฿${min} (ไม่รวมค่าส่ง ส่งฟรี) กลับไปเพิ่มสินค้าในตะกร้าแล้วสั่งอีกครั้ง`,
       msg: {
         head: (id) => (id ? `ออเดอร์ ${id}` : 'ออเดอร์ใหม่จากเมนูออนไลน์'),
         shop: 'ร้าน', contact: 'ผู้ติดต่อ', phone: 'โทร', line: 'LINE', date: 'รับของ',
@@ -235,7 +249,16 @@
       memberWins: (n) => `This phone is logged in as ${n}. To use another shop's QR, log out first.`,
       memberExpired: 'Your shop login has ended. Log in again with "Shop login".',
       loggedOut: 'Logged out',
-      failSession: 'Your shop login has ended. Your cart is still here: log in again, or fill in your shop details and order again.',
+      failSession: 'Your shop login has ended. Your cart is still here: log in again and place the order again.',
+      // login before ordering + minimum order (2026-11-07)
+      guestNote: 'Prices are open to everyone. To order online, log in with your shop account first.',
+      memberSignup: 'No account yet? Sign up',
+      loginToOrder: (name) => `Log in to order ${name}`,
+      loginToOrderShort: 'Log in to order',
+      minLeft: (min, left) => `Minimum order ฿${min} · ฿${left} to go`,
+      minOk: 'Free delivery',
+      failLogin: 'Please log in with your shop account to order. Your cart is still here: log in, then place the order again.',
+      failMin: (min) => `The minimum order is ฿${min} of goods (delivery is free). Add more to your cart and order again.`,
       msg: {
         head: (id) => (id ? `Order ${id}` : 'New order from the online menu'),
         shop: 'Shop', contact: 'Contact', phone: 'Phone', line: 'LINE', date: 'Delivery',
@@ -433,6 +456,15 @@
   function orderingOpen() {
     return Boolean(state.products && state.prices && !isStale());
   }
+  // Ordering needs a shop login (2026-11-07). Without one the menu shows prices only; anything that would put
+  // something in the cart sends the buyer to the login page. Code.gs refuses an order without a login anyway.
+  const canOrder = () => orderingOpen() && Boolean(state.member);
+  function goLogin() {
+    if (state.open) closeSheet();
+    location.href = LOGIN_PAGE;
+  }
+  // How far the goods are from the minimum order; 0 = enough.
+  const shortOfMin = (total) => Math.max(0, money(MIN_ORDER_THB - total));
 
   function renderNotice(t, from, to) {
     const box = document.getElementById('notice');
@@ -672,7 +704,7 @@
   function syncSheetCart() {
     const t = TEXT[state.lang];
     const btn = document.getElementById('sheet-cart');
-    const show = orderingOpen() && state.cart.size > 0;
+    const show = canOrder() && state.cart.size > 0;
     btn.hidden = !show;
     if (show) {
       document.getElementById('sheet-cart-label').textContent =
@@ -740,6 +772,8 @@
   // ---------- ordering: cart storage (buyer's browser only) ----------
   function loadCart() {
     state.cart.clear();
+    // Not logged in: the cart is not used. What is saved stays and comes back after the login page sends the buyer here.
+    if (!state.member) return;
     let saved = null;
     try { saved = JSON.parse(storageGet('menu-cart') || 'null'); } catch (_) { saved = null; }
     const items = saved && Array.isArray(saved.items) ? saved.items : [];
@@ -776,7 +810,7 @@
   function renderReorder() {
     const btn = document.getElementById('reorder');
     const n = lastOrderItems().filter(([sku]) => sellable(sku)).length;
-    btn.hidden = !(orderingOpen() && state.cart.size === 0 && n > 0);
+    btn.hidden = !(canOrder() && state.cart.size === 0 && n > 0);
     if (!btn.hidden) btn.textContent = TEXT[state.lang].reorder(n);
   }
   // Puts [sku, qty] pairs in the cart (a product already there takes the new quantity); skipped = not sold
@@ -799,7 +833,8 @@
     const items = savedItems('menu-reorder');
     if (storageGet('menu-reorder')) storageSet('menu-reorder', '');
     if (!items.length) return;
-    if (orderingOpen()) reorder(items); else flash(TEXT[state.lang].orderingOff);
+    if (canOrder()) reorder(items);
+    else flash(orderingOpen() ? TEXT[state.lang].loginToOrderShort : TEXT[state.lang].orderingOff);
   }
 
   // ---------- ordering: stepper ----------
@@ -819,10 +854,12 @@
   }
   const PLUS = 'M12 5v14M5 12h14';
   const MINUS = 'M5 12h14';
+  const LOCK = 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z';
 
   // One buy box per place a product appears (tile, product sheet, cart line). Each carries
   // data-osku and a _sync() so a change anywhere updates every view of that product.
   function buyBox(p, row, t, variant) {
+    if (!state.member) return loginBox(p, t, variant);
     const unit = unitOf(p, row);
     const name = nameOf(p);
     const box = el('div', `buy buy--${variant}`);
@@ -893,7 +930,22 @@
     return box;
   }
 
+  // Not logged in: the same "add" button, but it opens the login page; no stepper, nothing goes in the cart.
+  function loginBox(p, t, variant) {
+    const box = el('div', `buy buy--${variant} buy--locked`);
+    const add = el('button', 'add-btn');
+    add.type = 'button';
+    add.appendChild(icon(LOCK));
+    add.appendChild(el('span', '', variant === 'sheet' ? t.loginToOrderShort : t.add));
+    add.setAttribute('aria-label', t.loginToOrder(nameOf(p)));
+    add.addEventListener('click', goLogin);
+    box.appendChild(add);
+    box._sync = () => {};
+    return box;
+  }
+
   function setQty(sku, qty) {
+    if (!state.member) { goLogin(); return false; }
     const q = Math.max(0, Math.min(MAX_QTY, Math.floor(Number(qty) || 0)));
     if (q > 0 && !state.cart.has(sku) && state.cart.size >= MAX_LINES) {
       flash(TEXT[state.lang].cartFull);
@@ -931,7 +983,7 @@
   function renderDock() {
     const t = TEXT[state.lang];
     const dock = document.getElementById('dock');
-    const hasCart = orderingOpen() && state.cart.size > 0;
+    const hasCart = canOrder() && state.cart.size > 0;
     dock.classList.toggle('has-cart', hasCart);
     document.getElementById('cart-cta').hidden = !hasCart;
     document.getElementById('cta-label').classList.toggle('sr-only', hasCart);
@@ -948,6 +1000,7 @@
   const isCartOpen = () => cartDlg().open;
 
   function openCart(step) {
+    if (!state.member) { goLogin(); return; }
     const dlg = cartDlg();
     if (state.open) closeSheet();
     state.step = step || 'cart';
@@ -1033,9 +1086,18 @@
     const n = state.cart.size;
     document.getElementById('cart-sum').textContent = `฿${formatPrice(cartTotal(), t)}`;
     document.getElementById('cart-count-line').textContent = t.lines(n);
-    document.getElementById('cart-next').disabled = n === 0;
+    const short = shortOfMin(cartTotal());
+    document.getElementById('cart-next').disabled = n === 0 || short > 0;
     document.getElementById('cart-sumrow').hidden = n === 0;
     document.getElementById('cart-empty').hidden = n > 0;
+    renderMin(document.getElementById('cart-min'), n, short, t);
+  }
+
+  // Under the total: how much more to reach the minimum, or "free delivery" once it is reached.
+  function renderMin(box, n, short, t) {
+    box.hidden = n === 0;
+    box.classList.toggle('is-ok', short === 0);
+    box.textContent = short > 0 ? t.minLeft(formatPrice(MIN_ORDER_THB, t), formatPrice(short, t)) : t.minOk;
   }
 
   function renderFormTotals() {
@@ -1043,6 +1105,9 @@
     document.getElementById('form-count').textContent = t.lines(state.cart.size);
     document.getElementById('form-sum').textContent = `฿${formatPrice(cartTotal(), t)}`;
     document.getElementById('form-submit-label').textContent = busyLabel(t) || t.submit(formatPrice(cartTotal(), t));
+    const short = shortOfMin(cartTotal());
+    renderMin(document.getElementById('form-min'), state.cart.size, short, t);
+    document.getElementById('form-submit').disabled = state.busy || short > 0;
     const date = document.getElementById('f-date');
     date.min = ymd(tomorrow());
     if (!date.value || date.value < date.min) date.value = date.min;
@@ -1155,7 +1220,9 @@
     state.member = null;
     storageSet(MEMBER_KEY, '');
     tabSet(MEMBER_KEY, '');
-    renderShop();
+    // Back to prices only: the cart leaves the screen (it stays saved for the next login) and tiles show "log in".
+    state.cart.clear();
+    render();
   }
 
   // Refreshes name / address / logo in the background. A dead session (reset, closed, 90 days) logs out here.
@@ -1216,6 +1283,7 @@
     document.getElementById('shop-initial').hidden = Boolean(logoUrl);
     if (logoUrl) logo.src = logoUrl; else logo.removeAttribute('src');
     document.getElementById('member-account').hidden = member;
+    document.getElementById('guest-note').hidden = member;
     document.getElementById('member-logout').hidden = !member;
     document.getElementById('member-history').hidden = !member;
     document.getElementById('shop-forget').hidden = member;   // a login is undone with "log out", on the cover
@@ -1303,8 +1371,15 @@
     const t = TEXT[state.lang];
     const formErr = document.getElementById('form-error');
     formErr.hidden = true;
+    if (!state.member) { goLogin(); return; }
     if (!state.cart.size) { formErr.textContent = t.eEmpty; formErr.hidden = false; return; }
     if (!orderingOpen()) { formErr.textContent = t.orderingOff; formErr.hidden = false; return; }
+    const short = shortOfMin(cartTotal());
+    if (short > 0) {
+      formErr.textContent = t.minLeft(formatPrice(MIN_ORDER_THB, t), formatPrice(short, t));
+      formErr.hidden = false;
+      return;
+    }
     if (!validateForm()) return;
     saveCustomer();
     const order = buildOrder();
@@ -1437,7 +1512,10 @@
     const title = { ok: t.okTitle, pilot: t.pilotTitle, fail: t.failTitle }[last.status] || t.pilotTitle;
     // network / busy / server: the order may have been written before the answer got lost, so retry before LINE.
     const failBody = last.error === 'rate' ? t.failRate : last.error === 'session' ? t.failSession
-      : RETRYABLE.has(last.error) ? t.failMaybe : t.failBody;
+      : last.error === 'login_required' ? t.failLogin : last.error === 'min_order' ? t.failMin(formatPrice(MIN_ORDER_THB, t))
+        : RETRYABLE.has(last.error) ? t.failMaybe : t.failBody;
+    // Refused by the ordering rules: a LINE summary would go round them, so the way on is to log in or add more.
+    const refused = last.status === 'fail' && RULE_ERRORS.has(last.error);
     const body = { ok: t.okBody, pilot: t.pilotBody, fail: failBody }[last.status] || t.pilotBody;
     document.getElementById('cart-done').dataset.status = last.status;
     document.getElementById('done-title').textContent = title;
@@ -1446,7 +1524,9 @@
     document.getElementById('done-id').textContent = last.id || '';
     document.getElementById('done-summary').textContent =
       t.doneSummary(o.items.length, formatPrice(o.total, t), deliveryLabel(o.delivery.date, t));
-    document.getElementById('done-retry').hidden = last.status !== 'fail' || last.error === 'rate' || last.error === 'session';
+    document.getElementById('done-retry').hidden = last.status !== 'fail' || last.error === 'rate' || refused;
+    document.getElementById('done-line').hidden = refused;
+    document.getElementById('done-login').hidden = !(refused && last.error !== 'min_order');
     document.getElementById('done-clear').hidden = !(last.status === 'fail' && last.lineSent && state.cart.size);
     document.getElementById('done-line').href = lineMessageUrl(lineText(o, last.id, t));
   }

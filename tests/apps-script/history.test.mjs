@@ -8,7 +8,7 @@ const PHONE = '0812345678';
 const DAY = 24 * 3600 * 1000;
 
 function ready() {
-  const b = loadBackend();
+  const b = loadBackend({ oldOrderRules: true });
   b.ctx.setup();
   b.admin = (fn, ...args) => {
     b.session.user = OWNER;

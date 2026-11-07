@@ -14,7 +14,7 @@ const sha256 = s => createHash('sha256').update(s, 'utf8').digest('hex');
 const isDate = v => Object.prototype.toString.call(v) === '[object Date]';
 
 function ready() {
-  const b = loadBackend();
+  const b = loadBackend({ oldOrderRules: true });
   b.ctx.setup();
   // Admin work runs as the owner; everything the site does runs as nobody (the public order deployment).
   b.admin = (fn, ...args) => {
@@ -345,12 +345,6 @@ test('the login wins over a shop QR code in the same order', () => {
   addShop(b.sheet('Master'), { code: 'CUS-W050', name: 'QR shop', phone: '0833333333', shopCode: 'QQQQQQQQ22' });
   b.post(guestOrder({ session: m.token, shop_code: 'QQQQQQQQ22', customer: {} }));
   assert.equal(b.sheet('Order').records()[0].Customer_ID, m.id);
-});
-
-test('guest and shop-QR orders still need no login', () => {
-  const b = ready();
-  assert.equal(b.post(guestOrder()).ok, true);
-  assert.equal(b.sheet('Order').records()[0].Auth, 'guest');
 });
 
 // ---------- admin message ----------

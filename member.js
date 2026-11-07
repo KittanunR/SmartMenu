@@ -7,6 +7,9 @@
 (function () {
   const TIMEOUT_MS = 30000;   // bcrypt (~0.5 s) + an Apps Script cold start
   const STORE = 'menu-member';
+  // Sign-up (2026-11-07: ordering needs a login). There is no self sign-up: the shop asks on LINE and Betagro makes
+  // the account in the admin page. The message is filled in for them; it stays Thai because shop staff read it.
+  const SIGNUP_MSG = ['ขอสมัครสมาชิกสั่งของออนไลน์ (SmartMenu)', 'ชื่อร้าน: ', 'เบอร์โทร: ', 'ที่อยู่จัดส่ง: '].join('\n');
 
   const TEXT = {
     th: {
@@ -24,6 +27,9 @@
       loginBtn: 'เข้าสู่ระบบ',
       forgot: 'ลืมรหัสผ่าน หรือยังไม่มีบัญชี? ทักร้านทาง LINE ร้านจะส่งรหัสชั่วคราวให้ใหม่',
       askLine: 'ทักร้านทาง LINE',
+      signupTitle: 'สมัครสมาชิก',
+      signupBody: 'ร้านที่ยังไม่มีบัญชี ทักร้านทาง LINE แจ้งชื่อร้าน เบอร์โทร และที่อยู่จัดส่ง ร้านจะสร้างบัญชีและส่งรหัสชั่วคราวให้ทาง LINE สมัครฟรี',
+      signupBtn: 'สมัครสมาชิกทาง LINE',
       newTitle: 'ตั้งรหัสผ่านของร้าน',
       newIntro: 'รหัสชั่วคราวใช้ได้ครั้งเดียว ตั้งรหัสผ่านใหม่ที่ร้านจำได้ ครั้งต่อไปใช้รหัสนี้เข้าระบบ',
       newPassword: 'รหัสผ่านใหม่',
@@ -74,6 +80,9 @@
       loginBtn: 'Log in',
       forgot: "Forgot your password, or no account yet? Message us on LINE and we'll send a new temporary password.",
       askLine: 'Message us on LINE',
+      signupTitle: 'Sign up',
+      signupBody: "No account yet? Message us on LINE with your shop name, phone number and delivery address. We'll set up your account and send you a temporary password on LINE. Signing up is free.",
+      signupBtn: 'Sign up on LINE',
       newTitle: "Set your shop's password",
       newIntro: 'The temporary password works once. Choose a password your shop will remember and use it from now on.',
       newPassword: 'New password',
@@ -202,6 +211,10 @@
     $('shop-branch').textContent = state.lang === 'th' ? String(state.config.shop_name_th || '').replace(/^\s*Betagro Shop\s*/i, '') : branch;
     $('m-line').href = state.config.line_oa_url || '#';
     $('m-line').hidden = !state.config.line_oa_url;
+    const oa = String(state.config.line_oa_id || '');
+    $('m-signup').href = oa ? `https://line.me/R/oaMessage/${encodeURIComponent(oa)}/?${encodeURIComponent(SIGNUP_MSG)}` : (state.config.line_oa_url || '#');
+    $('m-signup').hidden = !oa && !state.config.line_oa_url;
+    $('signup').hidden = state.view !== 'login';
 
     $('v-login').hidden = state.view !== 'login';
     $('v-new').hidden = state.view !== 'new';

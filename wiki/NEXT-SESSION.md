@@ -1,5 +1,13 @@
 # Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-24 end of day)
 
+## 2026-11-07 — prices 7–13 Nov + login before ordering + ฿500 minimum: BUILT locally, NOT deployed
+- Prices: data/prices/2026-11-07.json published via publish-prices (sheet printed "07/10/2026 - 09/11/2026" — a typo; Petch chose 07/11–13/11). 17 of 65 prices changed.
+- Ordering needs a login: guests and shop-QR-only visitors see prices; every "add" button, the cart and submit send them to member.html. member.html has a "สมัครสมาชิก" block (no self sign-up: LINE message to the shop → admin creates the account).
+- Minimum ฿500 of goods (delivery free): cart shows "ขาดอีก ฿x" and the next button is off; at ฿500+ it shows "ส่งฟรี".
+- Server: Code.gs ORDER_RULES → `login_required`, `min_order`. Tests: tests/apps-script/order-rules.test.mjs (older tests use `oldOrderRules: true`). 112 tests pass, validate 0 errors.
+- Rollout: (1) push the site FIRST (?v=2026-11-07a): the old prices ended 06/11, so ordering is paused until it is live, and the new site already blocks guests and under-฿500 carts in the browser; (2) Apps Script: replace Code.gs only, no setup(), no new permissions; (3) order deployment (ID AKfycbyCWF…, NOT "Untitled") → New version → Deploy; (4) iPhone: the 3 cases.
+- Not done: the server trusts the unit prices the browser sends (it re-adds the lines, but does not re-read latest.json), so a hand-made request could claim higher prices to pass ฿500. Staff confirm the final total anyway.
+
 ## 2026-11-03 — complaints with photos BUILT (local, not deployed/pushed) + real-DIFOT switch needs answers
 - Complaints: see [complaints.md](complaints.md) — Apps Script v14 + setup() + AppSheet Exception DONE 2026-11-03 19:50; Petch to push the site, then iPhone test.
 - 2026-11-04: SWITCHED to the teammate's real app — DONE and tested (order deployment v16, Admin v15, members moved, logos in the app). See [real-difot-switch.md](real-difot-switch.md). Petch: push the site.

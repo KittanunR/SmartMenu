@@ -1,0 +1,1265 @@
+{
+  "effective_date": "2026-11-07",
+  "valid_from": "2026-11-07",
+  "valid_to": "2026-11-13",
+  "source_file": "1.jpg (pork) + 2.jpg (chicken, eggs) — sheet printed 07/10/2026-09/11/2026 (typo); Petch confirmed 07/11-13/11/2026",
+  "extracted_by": "claude",
+  "currency": "THB",
+  "prices": [
+    {
+      "sku": "PK-001",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 87
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 80
+        },
+        {
+          "min_qty": 11,
+          "price": 75
+        }
+      ]
+    },
+    {
+      "sku": "PK-002",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 64
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 60
+        },
+        {
+          "min_qty": 11,
+          "price": 57
+        }
+      ]
+    },
+    {
+      "sku": "PK-003",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 64
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 60
+        },
+        {
+          "min_qty": 11,
+          "price": 57
+        }
+      ]
+    },
+    {
+      "sku": "PK-004",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 157
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 150
+        },
+        {
+          "min_qty": 11,
+          "price": 145
+        }
+      ]
+    },
+    {
+      "sku": "PK-005",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 357
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 348
+        },
+        {
+          "min_qty": 11,
+          "price": 340
+        }
+      ]
+    },
+    {
+      "sku": "PK-006",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 145
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 140
+        },
+        {
+          "min_qty": 11,
+          "price": 135
+        }
+      ]
+    },
+    {
+      "sku": "PK-007",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 161
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 149
+        },
+        {
+          "min_qty": 11,
+          "price": 144
+        }
+      ]
+    },
+    {
+      "sku": "PK-008",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 151
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 144
+        },
+        {
+          "min_qty": 11,
+          "price": 139
+        }
+      ]
+    },
+    {
+      "sku": "PK-009",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 128
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 121
+        },
+        {
+          "min_qty": 11,
+          "price": 119
+        }
+      ]
+    },
+    {
+      "sku": "PK-010",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 126
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 119
+        },
+        {
+          "min_qty": 11,
+          "price": 117
+        }
+      ]
+    },
+    {
+      "sku": "PK-011",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 189
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 182
+        },
+        {
+          "min_qty": 11,
+          "price": 177
+        }
+      ]
+    },
+    {
+      "sku": "PK-012",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 202
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 195
+        },
+        {
+          "min_qty": 11,
+          "price": 190
+        }
+      ]
+    },
+    {
+      "sku": "PK-013",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 162
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 155
+        },
+        {
+          "min_qty": 11,
+          "price": 150
+        }
+      ]
+    },
+    {
+      "sku": "PK-014",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 141
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 134
+        },
+        {
+          "min_qty": 11,
+          "price": 129
+        }
+      ]
+    },
+    {
+      "sku": "PK-015",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 144
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 137
+        },
+        {
+          "min_qty": 11,
+          "price": 132
+        }
+      ]
+    },
+    {
+      "sku": "PK-016",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 178
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 174
+        },
+        {
+          "min_qty": 11,
+          "price": 169
+        }
+      ]
+    },
+    {
+      "sku": "PK-017",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 205
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 197
+        },
+        {
+          "min_qty": 11,
+          "price": 191
+        }
+      ]
+    },
+    {
+      "sku": "PK-018",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 168
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 161
+        },
+        {
+          "min_qty": 11,
+          "price": 159
+        }
+      ]
+    },
+    {
+      "sku": "PK-019",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 204
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 199
+        },
+        {
+          "min_qty": 11,
+          "price": 195
+        }
+      ]
+    },
+    {
+      "sku": "PK-020",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 230
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 223
+        },
+        {
+          "min_qty": 11,
+          "price": 218
+        }
+      ]
+    },
+    {
+      "sku": "PK-021",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 135
+        },
+        {
+          "min_qty": 3,
+          "price": 130
+        }
+      ]
+    },
+    {
+      "sku": "PK-022",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 127
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 120
+        },
+        {
+          "min_qty": 11,
+          "price": 115
+        }
+      ]
+    },
+    {
+      "sku": "PK-023",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 109
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 102
+        },
+        {
+          "min_qty": 11,
+          "price": 95
+        }
+      ]
+    },
+    {
+      "sku": "PK-024",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 29
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 22
+        },
+        {
+          "min_qty": 11,
+          "price": 19
+        }
+      ]
+    },
+    {
+      "sku": "PK-025",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 37
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 30
+        },
+        {
+          "min_qty": 11,
+          "price": 25
+        }
+      ]
+    },
+    {
+      "sku": "PK-026",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 160
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 153
+        },
+        {
+          "min_qty": 11,
+          "price": 148
+        }
+      ]
+    },
+    {
+      "sku": "PK-027",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 87
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 80
+        },
+        {
+          "min_qty": 11,
+          "price": 75
+        }
+      ]
+    },
+    {
+      "sku": "PK-028",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 92
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 85
+        },
+        {
+          "min_qty": 11,
+          "price": 80
+        }
+      ]
+    },
+    {
+      "sku": "PK-029",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 72
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 65
+        },
+        {
+          "min_qty": 11,
+          "price": 60
+        }
+      ]
+    },
+    {
+      "sku": "PK-030",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 97
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 90
+        },
+        {
+          "min_qty": 11,
+          "price": 85
+        }
+      ]
+    },
+    {
+      "sku": "PK-031",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 87
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 80
+        },
+        {
+          "min_qty": 11,
+          "price": 75
+        }
+      ]
+    },
+    {
+      "sku": "PK-032",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 169
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 157
+        },
+        {
+          "min_qty": 11,
+          "price": 153
+        }
+      ]
+    },
+    {
+      "sku": "PK-033",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 153
+        },
+        {
+          "min_qty": 3,
+          "price": 145
+        }
+      ]
+    },
+    {
+      "sku": "CK-001",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 77
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 70
+        },
+        {
+          "min_qty": 11,
+          "price": 67
+        }
+      ]
+    },
+    {
+      "sku": "CK-002",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 52
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 48
+        },
+        {
+          "min_qty": 11,
+          "price": 45
+        }
+      ]
+    },
+    {
+      "sku": "CK-003",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 25
+        },
+        {
+          "min_qty": 3,
+          "price": 21
+        }
+      ]
+    },
+    {
+      "sku": "CK-004",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 107
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 103
+        },
+        {
+          "min_qty": 11,
+          "price": 100
+        }
+      ]
+    },
+    {
+      "sku": "CK-005",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 95
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 90
+        },
+        {
+          "min_qty": 11,
+          "price": 88
+        }
+      ]
+    },
+    {
+      "sku": "CK-006",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 86
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 81
+        },
+        {
+          "min_qty": 11,
+          "price": 78
+        }
+      ]
+    },
+    {
+      "sku": "CK-007",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "price": 107
+        }
+      ]
+    },
+    {
+      "sku": "CK-008",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 109
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 104
+        },
+        {
+          "min_qty": 11,
+          "price": 102
+        }
+      ]
+    },
+    {
+      "sku": "CK-009",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 147
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 140
+        },
+        {
+          "min_qty": 11,
+          "price": 130
+        }
+      ]
+    },
+    {
+      "sku": "CK-010",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 99
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 94
+        },
+        {
+          "min_qty": 11,
+          "price": 92
+        }
+      ]
+    },
+    {
+      "sku": "CK-011",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 92
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 87
+        },
+        {
+          "min_qty": 11,
+          "price": 82
+        }
+      ]
+    },
+    {
+      "sku": "CK-012",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 122
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 115
+        },
+        {
+          "min_qty": 11,
+          "price": 105
+        }
+      ]
+    },
+    {
+      "sku": "CK-013",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 90
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 86
+        },
+        {
+          "min_qty": 11,
+          "price": 83
+        }
+      ]
+    },
+    {
+      "sku": "CK-014",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 63
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 59
+        },
+        {
+          "min_qty": 11,
+          "price": 56
+        }
+      ]
+    },
+    {
+      "sku": "CK-015",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 102
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 97
+        },
+        {
+          "min_qty": 11,
+          "price": 96
+        }
+      ]
+    },
+    {
+      "sku": "CK-016",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 103
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 98
+        },
+        {
+          "min_qty": 11,
+          "price": 96
+        }
+      ]
+    },
+    {
+      "sku": "CK-017",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 59
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 55
+        },
+        {
+          "min_qty": 11,
+          "price": 42
+        }
+      ]
+    },
+    {
+      "sku": "CK-018",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 96
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 92
+        },
+        {
+          "min_qty": 11,
+          "price": 89
+        }
+      ]
+    },
+    {
+      "sku": "CK-019",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 132
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 128
+        },
+        {
+          "min_qty": 11,
+          "price": 125
+        }
+      ]
+    },
+    {
+      "sku": "CK-020",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "price": 176
+        }
+      ]
+    },
+    {
+      "sku": "CK-021",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 67
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 63
+        },
+        {
+          "min_qty": 11,
+          "price": 60
+        }
+      ]
+    },
+    {
+      "sku": "CK-022",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 58
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 54
+        },
+        {
+          "min_qty": 11,
+          "price": 50
+        }
+      ]
+    },
+    {
+      "sku": "CK-023",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 80
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 76
+        },
+        {
+          "min_qty": 11,
+          "price": 72
+        }
+      ]
+    },
+    {
+      "sku": "CK-024",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 84
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 80
+        },
+        {
+          "min_qty": 11,
+          "price": 75
+        }
+      ]
+    },
+    {
+      "sku": "CK-025",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 78
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 74
+        },
+        {
+          "min_qty": 11,
+          "price": 70
+        }
+      ]
+    },
+    {
+      "sku": "CK-026",
+      "qty_unit": "kg",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 80
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 76
+        },
+        {
+          "min_qty": 11,
+          "price": 72
+        }
+      ]
+    },
+    {
+      "sku": "EG-001",
+      "qty_unit": "tray",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 162
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 159
+        },
+        {
+          "min_qty": 11,
+          "price": 156
+        }
+      ]
+    },
+    {
+      "sku": "EG-002",
+      "qty_unit": "tray",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 149
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 146
+        },
+        {
+          "min_qty": 11,
+          "price": 143
+        }
+      ]
+    },
+    {
+      "sku": "EG-003",
+      "qty_unit": "tray",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 143
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 140
+        },
+        {
+          "min_qty": 11,
+          "price": 137
+        }
+      ]
+    },
+    {
+      "sku": "EG-004",
+      "qty_unit": "tray",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 137
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 134
+        },
+        {
+          "min_qty": 11,
+          "price": 131
+        }
+      ]
+    },
+    {
+      "sku": "EG-005",
+      "qty_unit": "tray",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "max_qty": 2,
+          "price": 130
+        },
+        {
+          "min_qty": 3,
+          "max_qty": 10,
+          "price": 127
+        },
+        {
+          "min_qty": 11,
+          "price": 124
+        }
+      ]
+    },
+    {
+      "sku": "EG-006",
+      "qty_unit": "pack",
+      "tiers": [
+        {
+          "min_qty": 1,
+          "price": 66
+        }
+      ]
+    }
+  ]
+}
