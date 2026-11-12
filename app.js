@@ -1,5 +1,6 @@
-// Betagro Shop price menu (v2). Reads three JSON files and renders. The only thing it sends anywhere
-// is an order the buyer submits (docs/ORDER_CONTRACT.md); the cart lives in the buyer's own browser.
+// Betagro Shop price menu (v2). Reads three JSON files and renders. It sends an order the buyer submits
+// (docs/ORDER_CONTRACT.md); the cart lives in the buyer's own browser. Usage statistics go through track.js,
+// and only after the visitor accepts its banner (2026-11-12); track() below is a no-op without it.
 // The site does not know or care who produced the prices (claude, benny, manual).
 'use strict';
 
@@ -297,6 +298,15 @@
   };
 
   // ---------- helpers ----------
+  // Usage statistics (track.js): never throws, never blocks the menu.
+  function track(name, props) { try { if (window.SM_TRACK) window.SM_TRACK.event(name, props || {}); } catch (_) { /* ignore */ } }
+  function trackInfo(sku) {
+    const p = state.productBySku.get(sku) || {};
+    const row = state.priceBySku.get(sku);
+    return { sku, product: p.name_th || '', category: p.category || '', price: row ? row.tiers[0].price : undefined, unit: row ? row.qty_unit : undefined };
+  }
+  let openedAt = 0;
+
   function storageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
   function storageSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* private mode */ } }
   function tabGet(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } }
@@ -460,6 +470,7 @@
   // something in the cart sends the buyer to the login page. Code.gs refuses an order without a login anyway.
   const canOrder = () => orderingOpen() && Boolean(state.member);
   function goLogin() {
+    track('login_prompt');
     if (state.open) closeSheet();
     location.href = LOGIN_PAGE;
   }
@@ -563,6 +574,7 @@
 
   function tile(p, i, t) {
     const li = el('li', 'cell');
+    li.dataset.sku = p.sku;   // track.js counts tiles that stay on screen
     li.style.setProperty('--i', String(Math.min(i, 10)));
     const b = el('button', 'tile');
     b.type = 'button';
@@ -715,6 +727,8 @@
   function openSheet(sku) {
     const dlg = document.getElementById('sheet');
     state.open = sku;
+    openedAt = Date.now();
+    track('product_open', trackInfo(sku));
     fillSheet(sku);
     if (typeof dlg.showModal === 'function') {
       if (!dlg.open) dlg.showModal();
@@ -955,6 +969,12 @@
     const had = state.cart.has(sku);
     if (q > 0) state.cart.set(sku, q); else state.cart.delete(sku);
     saveCart();
+    if (q > 0 || had) {
+      const row = state.priceBySku.get(sku);
+      const price = row && q > 0 ? tierFor(row, q).price : undefined;
+      track(q === 0 ? 'cart_remove' : had ? 'cart_qty' : 'cart_add',
+        { ...trackInfo(sku), qty: q, price, value: price != null ? money(price * q) : undefined });
+    }
     syncSku(sku);
     renderDock();
     if (isCartOpen()) {
@@ -1004,6 +1024,7 @@
     const dlg = cartDlg();
     if (state.open) closeSheet();
     state.step = step || 'cart';
+    track('cart_open', { qty: state.cart.size, value: cartTotal() });
     renderCart();
     if (typeof dlg.showModal === 'function') { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', '');
     dlg.scrollTop = 0;
@@ -1460,6 +1481,7 @@
       setBusy(false);
     }
     if (result.ok && result.id) {
+      track('order_sent', { qty: state.last.order.items.length, value: state.last.order.total });
       state.last.status = 'ok';
       state.last.id = result.id;
       saveLastOrder(state.last.order);
@@ -1579,6 +1601,7 @@
   // ---------- interaction ----------
   function selectCategory(c, focus) {
     const changed = c !== state.category;
+    if (changed) track('category_view', { category: c });
     state.category = c;
     state.fade = changed;
     history.replaceState(null, '', `${location.pathname}${location.search}#${c}`);
@@ -1604,6 +1627,7 @@
     state.lang = lang;
     storageSet('menu-lang', lang);
     render();
+    track('language', { lang });
   }
 
   // ---------- boot ----------
@@ -1613,14 +1637,24 @@
     loadMember();
     initLangPicker(setLanguage);
     document.getElementById('tabs').addEventListener('keydown', onTabKey);
+    let searchTimer = 0;
     document.getElementById('search').addEventListener('input', (e) => {
       state.query = e.target.value;
       renderGrid(TEXT[state.lang]);
+      // One search event when the buyer stops typing, with how many products it found.
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        const q = state.query.trim();
+        if (q) track('search', { detail: q.slice(0, 40), value: document.querySelectorAll('#grid li[data-sku]').length });
+      }, 1200);
     });
     const dlg = document.getElementById('sheet');
     document.getElementById('sheet-close').addEventListener('click', closeSheet);
     dlg.addEventListener('click', (e) => { if (e.target === dlg) closeSheet(); });   // tap on the backdrop
-    dlg.addEventListener('close', () => { state.open = null; });
+    dlg.addEventListener('close', () => {
+      if (state.open) track('product_close', { sku: state.open, value: Math.round((Date.now() - openedAt) / 1000) });
+      state.open = null;
+    });
 
     const cart = cartDlg();
     document.getElementById('cart-cta').addEventListener('click', () => openCart());
@@ -1628,7 +1662,10 @@
     document.getElementById('cart-close').addEventListener('click', closeCart);
     cart.addEventListener('click', (e) => { if (e.target === cart) closeCart(); });
     cart.addEventListener('close', () => { if (state.step === 'done' && !state.busy) state.step = 'cart'; });
-    document.getElementById('cart-next').addEventListener('click', () => showStep('form'));
+    document.getElementById('cart-next').addEventListener('click', () => {
+      track('checkout_start', { qty: state.cart.size, value: cartTotal() });
+      showStep('form');
+    });
     document.getElementById('form-back').addEventListener('click', () => showStep('cart'));
     document.getElementById('cart-form').addEventListener('submit', onSubmit);
     document.getElementById('done-retry').addEventListener('click', () => { if (state.last) send(); });
@@ -1690,6 +1727,12 @@
     }
 
     render();
+    if (window.SM_TRACK) {
+      try {
+        window.SM_TRACK.start({ endpoint: state.config.analytics_endpoint, page: 'menu',
+          member: Boolean(state.member), shopQr: Boolean(fromScan || state.shop) });
+      } catch (_) { /* statistics must never break the menu */ }
+    }
     checkShop(fromScan);   // in the background: the menu never waits for it
     checkMember();
     reorderFromHistory();

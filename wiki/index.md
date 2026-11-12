@@ -28,3 +28,4 @@ Dated history of decisions for the QR price-menu site. Never "currently" — dat
 
 ## Open items
 - [open-items.md](open-items.md) — waiting on real SKU list + sample price PDF
+- [analytics.md](analytics.md) — usage statistics: consent banner, events, Petch's private sheet (2026-11-12)

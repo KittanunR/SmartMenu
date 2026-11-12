@@ -742,3 +742,35 @@ html:lang(zh) { --display: "Prompt", "PingFang SC", "Microsoft YaHei", sans-seri
 html:lang(ko) { --display: "Prompt", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; --text: "Plex Thai", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
 html:lang(hi) { --display: "Prompt", "Kohinoor Devanagari", "Nirmala UI", "Noto Sans Devanagari", sans-serif; --text: "Plex Thai", "Kohinoor Devanagari", "Nirmala UI", "Noto Sans Devanagari", system-ui, sans-serif; }
 .hist__alt { color: var(--grey); font-size: var(--t12); }
+
+/* ---------- usage-data banner (track.js, 2026-11-12): above the dock, never blocks the menu ---------- */
+.consent {
+  position: fixed; left: var(--gutter); right: var(--gutter); z-index: 8;
+  bottom: calc(var(--dock-h) + var(--s2) + env(safe-area-inset-bottom));
+  max-width: 480px; margin: 0 auto; padding: var(--s4);
+  background: var(--white); color: var(--ink);
+  border: 1px solid var(--line); border-top: 3px solid var(--forest); border-radius: var(--r-hair);
+  box-shadow: 0 8px 24px -8px rgba(27, 31, 26, .28);
+}
+.consent__title { font: 600 var(--t16)/1.35 var(--display); color: var(--forest); }
+.consent__body { margin-top: var(--s1); font-size: var(--t14); color: var(--grey); text-wrap: pretty; }
+.consent__more { display: inline-block; margin-top: var(--s1); font-size: var(--t14); color: var(--forest); }
+.consent__row { display: flex; gap: var(--s2); margin-top: var(--s3); }
+/* Accept and decline look the same: neither choice is pushed (PDPA). */
+.consent__btn {
+  flex: 1; min-height: 44px; padding: 0 var(--s3);
+  border: 1px solid var(--forest); border-radius: var(--r-pill);
+  background: var(--white); color: var(--forest);
+  font: 600 var(--t14)/1 var(--display); cursor: pointer;
+}
+.consent__btn:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+.colophon__link {
+  margin-top: var(--s3); padding: var(--s1) 0; border: 0; background: none;
+  font: 300 var(--t12)/1.4 var(--display); color: var(--grey); text-decoration: underline; cursor: pointer;
+}
+.privacy article { margin-top: var(--s4); }
+.privacy ul { margin: var(--s2) 0 0; padding-left: var(--s5); }
+.privacy li + li { margin-top: var(--s1); }
+.privacy h2 { margin-top: var(--s5); }
+.privacy p { margin-top: var(--s2); }
+.privacy__en { margin-top: var(--s7) !important; padding-top: var(--s5); border-top: 1px solid var(--line); }

@@ -5,5 +5,6 @@
   "line_oa_id": "@897izxro",
   "stale_after_days": 9,
   "shop_id": "SU22",
+  "analytics_endpoint": "",
   "order_endpoint": "https://script.google.com/macros/s/AKfycbyCWFykAPyH7bjGIgfAqo2Af44Udwy9RtIkhpvsSIfUXNmexgkuw3Ak-9LQDC5idomd/exec"
 }

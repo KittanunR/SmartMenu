@@ -280,8 +280,8 @@ export function checkRepo() {
   return { errors, warnings };
 }
 
-const PAGES = ['index.html', 'member.html', 'history.html', 'tools/shop-qr.html'];
-const SCRIPTS = ['app.js', 'member.js', 'history.js', 'i18n.js', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Member.gs', 'backend/apps-script/Bcrypt.gs'];
+const PAGES = ['index.html', 'member.html', 'history.html', 'privacy.html', 'tools/shop-qr.html'];
+const SCRIPTS = ['app.js', 'member.js', 'history.js', 'i18n.js', 'track.js', 'backend/analytics/Analytics.gs', 'backend/apps-script/Code.gs', 'backend/apps-script/Admin.gs', 'backend/apps-script/Member.gs', 'backend/apps-script/Bcrypt.gs'];
 const CONFIG_STRINGS = ['shop_name_th', 'shop_name_en', 'line_oa_url', 'line_oa_id', 'shop_id'];
 const ENDPOINT = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 
@@ -299,6 +299,10 @@ export function checkSite() {
     if (!(cfg.data.stale_after_days > 0)) errors.push('config.json: "stale_after_days" must be a number above 0');
     if (cfg.data.order_endpoint === undefined) warnings.push('config.json: no "order_endpoint" — the site will only offer ordering through LINE');
     else if (!ENDPOINT.test(String(cfg.data.order_endpoint))) errors.push('config.json: "order_endpoint" is not an Apps Script https://script.google.com/macros/s/…/exec URL');
+    // Usage statistics (track.js, 2026-11-12): empty = off. Must not be the order endpoint (a different Apps Script).
+    const ae = cfg.data.analytics_endpoint;
+    if (ae !== undefined && ae !== '' && !ENDPOINT.test(String(ae))) errors.push('config.json: "analytics_endpoint" must be empty or an Apps Script https://script.google.com/macros/s/…/exec URL');
+    if (ae && ae === cfg.data.order_endpoint) errors.push('config.json: "analytics_endpoint" is the order endpoint — it must be the separate analytics web app');
   }
 
   for (const page of PAGES) {
