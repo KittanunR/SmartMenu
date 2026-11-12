@@ -1,8 +1,8 @@
 # Next session — pick up here (written 2026-10-23 01:38, updated 2026-10-24 end of day)
 
-## 2026-11-12 — usage statistics (PDPA opt-in) BUILT locally, analytics_endpoint still empty (= off)
+## 2026-11-12 — usage statistics (PDPA opt-in) LIVE on btgs.sukhumvit once the site is pushed
 - See [analytics.md](analytics.md). track.js + banner + privacy.html + backend/analytics/Analytics.gs (separate Apps Script on Petch's own sheet). 129 tests pass, validate 0 errors, checked in Chromium (nothing sent before accept; forget sent on decline).
-- Petch: setup steps 1–4 in analytics.md, then send the /exec URL → set config.json analytics_endpoint → push.
+- Apps Script + sheet + deployment done by Claude (analytics.md). Petch: iPhone test after the push.
 
 ## 2026-11-07 — prices 7–13 Nov + login before ordering + ฿500 minimum: BUILT locally, NOT deployed
 - Prices: data/prices/2026-11-07.json published via publish-prices (sheet printed "07/10/2026 - 09/11/2026" — a typo; Petch chose 07/11–13/11). 17 of 65 prices changed.

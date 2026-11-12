@@ -22,7 +22,14 @@ privacy.html, withdraw = delete, 13-month retention.
 - Tests: tests/analytics/analytics.test.mjs, tests/site/track.test.mjs. Policy version `2026-11-12` lives in track.js
   (POLICY), Analytics.gs (POLICY_VERSION) and privacy.html — change all three together; everyone is asked again.
 
-## Setup (Petch, once) — use ONE Google account in the browser window
+## LIVE setup (2026-11-12, done by Claude in the built-in browser)
+- Sheet "SmartMenu Analytics" on **btgs.sukhumvit** (id 1H2KZ1gL9D0-wglkeyAGBWFOQvL4B08_LwZjvOz6LvUw), not shared.
+- Apps Script project "SmartMenu Analytics" (standalone, opens the sheet by SHEET_ID; onOpen menu does not apply). setup() ran: tabs, charts, triggers.
+- Web app deployment "v1 analytics": Execute as Me, Anyone → in config.json analytics_endpoint. Tested from the browser: 2 events saved, then forget removed 2 (one test "withdrawn" row stays in Consent).
+- Code change = paste Analytics.gs → Deploy → Manage deployments → ✏️ → New version (same /exec).
+- A stray empty "SmartMenu Analytics" sheet was made on kittanun.rua first: Petch can delete it.
+
+## Setup (Petch, once — reference) — use ONE Google account in the browser window
 1. sheets.new (signed in to the account that should own the data) → name it **SmartMenu Analytics**. Do not share it.
 2. Extensions → Apps Script → delete what is there → paste `backend/analytics/Analytics.gs` → Save.
 3. Choose `setup` → Run → allow (tick every box). Tabs + Dashboard charts + 2 triggers appear.
@@ -31,5 +38,4 @@ privacy.html, withdraw = delete, 13-month retention.
 6. iPhone: open the menu → banner → ยอมรับ → open 2 products → wait 10 s → sheet Events has rows → menu SmartMenu → อัปเดตสรุปตอนนี้.
 
 ## Open
-- Should the data sit under btgs.sukhumvit (the shop's Google account) instead of a personal Gmail? It is Betagro customer behaviour.
 - Anyone can post fake events to the public /exec (limits above cap the damage). Bots are not filtered.

@@ -1,6 +1,6 @@
 /**
- * SmartMenu usage statistics (2026-11-12). A SEPARATE Apps Script project, bound to Petch's own Google Sheet
- * "SmartMenu Analytics" (Extensions → Apps Script in that sheet). It is not part of the order backend and never
+ * SmartMenu usage statistics (2026-11-12). A SEPARATE Apps Script project, writing to the Google Sheet
+ * "SmartMenu Analytics" on the shop account btgs.sukhumvit (SHEET_ID below). It is not part of the order backend and never
  * touches the DIFOT sheet.
  *
  * Who can see the data: only the Google account that owns the sheet. The web app is deployed "Execute as: Me" and
@@ -260,7 +260,10 @@ function addCharts_(ss) {
 
 // ---------- helpers ----------
 
-function book_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+// The project was made as a standalone script (not bound), so it opens the sheet by id; bound copies use their own sheet.
+// Sheet "SmartMenu Analytics" on btgs.sukhumvit (2026-11-12). The id alone gives no access: the sheet is not shared.
+const SHEET_ID = '1H2KZ1gL9D0-wglkeyAGBWFOQvL4B08_LwZjvOz6LvUw';
+function book_() { return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID); }
 
 function tab_(ss, name, cols) {
   let sheet = ss.getSheetByName(name);
