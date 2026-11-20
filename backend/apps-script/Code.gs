@@ -248,16 +248,21 @@ function doPost(e) {
 
     // Promise_P is an app formula in the DIFOT app (Req_Date + Req_Slot): AppSheet only fills it for rows made in the
     // app, and its KPI sheet (on time %) reads it, so a web order writes it too.
+    // Real date values, not text (2026-11-20): AppSheet reads a text "2026-11-21 17:00" on a th-TH phone as NaN, and then
+    // every Pack Done / Delivered on that order failed ("Promise_P cannot be converted to DateTime"). Bangkok = UTC+7.
     const reqDate = (o.delivery && o.delivery.date) || Utilities.formatDate(now, TZ, 'yyyy-MM-dd');
     const slot = deliverySlot_(ss);
+    const reqDay = new Date(reqDate + 'T00:00:00+07:00');
+    const promise = new Date(reqDate + 'T' + slot + ':00+07:00');
     appendByHeader_(orders, {
       Order_ID: orderId, Shop_ID: SHOP_ID, Source: WEB_ORDER.source, Channel: WEB_ORDER.channel,
       Order_Date: now, T1_Ordered: now, T2_Saved: now, Customer_ID: customerId,
-      Req_Date: reqDate, Req_Slot: slot, Promise_P: reqDate + ' ' + slot,
+      Req_Date: reqDay, Req_Slot: slot, Promise_P: promise,
       Delivery_Mode: WEB_ORDER.deliveryMode, Note: orderNote_(o), T_Accept: now, Customer_Issue: false, Status: WEB_ORDER.status,
       Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: member ? 'member' : shop ? 'shop_qr' : 'guest'
     });
+    dateFormats_(orders, orders.getLastRow());
 
     appendRowsByHeader_(ss.getSheetByName('Order_Items'), o.items.map((it, i) => ({
       Item_ID: orderId + '-' + (i + 1), Order_ID: orderId, SKU: it.sku, Name_TH: it.name_th,
@@ -422,6 +427,48 @@ function nextOrderId_(sheet, now) {
 // Sheets turns text starting with = + - @ into a formula (=IMPORTDATA("https://…"&A2) typed into the order form could
 // send sheet data out). Every row we write goes through this, so typed text stays text; the apostrophe is not stored.
 const plain_ = v => (typeof v === 'string' && /^[=+\-@]/.test(v) ? "'" + v : v);
+
+// The DIFOT app's own rows show Req_Date as M/d/yyyy and Promise_P as M/d/yyyy H:mm:ss; ours look the same, so
+// AppSheet reads them the same way on every phone (2026-11-20).
+const DATE_FORMATS = { Req_Date: 'M/d/yyyy', Promise_P: 'M/d/yyyy H:mm:ss' };
+
+function dateFormats_(sheet, row) {
+  const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  Object.keys(DATE_FORMATS).forEach(k => {
+    const c = head.indexOf(k);
+    if (c !== -1) sheet.getRange(row, c + 1).setNumberFormat(DATE_FORMATS[k]);
+  });
+}
+
+/**
+ * Run once by hand (2026-11-20): web orders written before the fix have Req_Date / Promise_P as text or in yyyy-MM-dd,
+ * which AppSheet could not read back, so Pack Done / Delivered failed on them. Rewrites them as real dates in the
+ * app's format. Only rows with Source SmartMenu and an Order_ID starting with W; nothing else is touched.
+ */
+function fixWebOrderDates() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Order');
+  const data = sheet.getDataRange().getValues();
+  const head = data[0];
+  const iId = head.indexOf('Order_ID'), iSrc = head.indexOf('Source'), iDay = head.indexOf('Req_Date'),
+    iSlot = head.indexOf('Req_Slot'), iP = head.indexOf('Promise_P');
+  const dayOf = v => (v && typeof v.getTime === 'function' ? Utilities.formatDate(v, TZ, 'yyyy-MM-dd')
+    : (String(v).match(/^\d{4}-\d{2}-\d{2}/) || [''])[0]);
+  const slotOf = v => (v && typeof v.getTime === 'function' ? Utilities.formatDate(v, TZ, 'HH:mm')
+    : (String(v).match(/^\d{1,2}:\d{2}/) || [WEB_ORDER.slotDefault])[0].padStart(5, '0'));
+  const fixed = [];
+  for (let r = 1; r < data.length; r++) {
+    if (!/^W\d{6}-\d{3}$/.test(String(data[r][iId])) || data[r][iSrc] !== WEB_ORDER.source) continue;
+    const day = dayOf(data[r][iDay]);
+    if (!day) continue;
+    const slot = slotOf(data[r][iSlot]);
+    sheet.getRange(r + 1, iDay + 1).setValue(new Date(day + 'T00:00:00+07:00'));
+    sheet.getRange(r + 1, iP + 1).setValue(new Date(day + 'T' + slot + ':00+07:00'));
+    dateFormats_(sheet, r + 1);
+    fixed.push(data[r][iId]);
+  }
+  Logger.log(fixed.length + ' web order(s) fixed: ' + fixed.join(', '));
+  return fixed;
+}
 
 function appendByHeader_(sheet, obj) {
   const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];

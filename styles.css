@@ -47,6 +47,9 @@
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
+/* Tapping + / add / order buttons quickly must not zoom the page on iPhone (double-tap zoom, 2026-11-20).
+   'manipulation' keeps scrolling and two-finger pinch zoom; it only turns off double-tap zoom. */
+*, *::before, *::after { touch-action: manipulation; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--tabs-h); }
 body {
   margin: 0;

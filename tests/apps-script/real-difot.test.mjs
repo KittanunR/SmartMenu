@@ -24,9 +24,11 @@ test('a web order is Accepted at once and fills the columns the DIFOT app reads'
   assert.equal(o.Source, 'SmartMenu');
   assert.equal(o.Channel, 'เว็บ');
   assert.equal(o.Delivery_Mode, 'ไรเดอร์ร้าน');
-  assert.equal(o.Req_Date, '2026-10-25');
+  // Real dates, not text: AppSheet could not read the text on a Thai phone, so every Pack Done failed (2026-11-20).
+  assert.equal(new Date(o.Req_Date).toISOString(), '2026-10-24T17:00:00.000Z');    // 25 Oct 00:00 Bangkok
   assert.equal(o.Req_Slot, '17:00');
-  assert.equal(o.Promise_P, '2026-10-25 17:00');   // the app's KPI sheet reads it; Sheets makes it a date-time
+  assert.equal(new Date(o.Promise_P).toISOString(), '2026-10-25T10:00:00.000Z');   // 25 Oct 17:00 Bangkok
+  assert.equal(typeof o.Promise_P.getTime, 'function');
   assert.equal(typeof o.T1_Ordered.getTime, 'function');
   assert.equal(typeof o.T2_Saved.getTime, 'function');
   assert.equal(o.Customer_Issue, false);
@@ -41,7 +43,7 @@ test('a web order without a delivery date is for today; the slot falls back to 1
   const b = ready();
   assert.equal(b.post(guestOrder({ delivery: { address_note: 'Soi 22' } })).ok, true);
   const [o] = b.sheet('Order').records();
-  assert.equal(o.Req_Date, today());
+  assert.equal(new Date(o.Req_Date).toISOString(), new Date(today() + 'T00:00:00+07:00').toISOString());
   assert.equal(o.Req_Slot, '17:00');
 });
 
@@ -182,4 +184,31 @@ test('a moved member can log in and order in the real sheet', () => {
   assert.equal(o.Customer_ID, 'CUS-W008');
   assert.equal(o.Auth, 'member');
   assert.equal(o.Status, 'Accepted');
+});
+
+// ---------- dates the DIFOT app can read back (2026-11-20) ----------
+test('a web order shows Req_Date / Promise_P in the app\'s own date formats', () => {
+  const b = ready();
+  assert.equal(b.post(guestOrder()).ok, true);
+  const s = b.sheet('Order');
+  const head = s.header();
+  assert.equal(s.formats[`2:${head.indexOf('Req_Date') + 1}`], 'M/d/yyyy');
+  assert.equal(s.formats[`2:${head.indexOf('Promise_P') + 1}`], 'M/d/yyyy H:mm:ss');
+});
+
+test('fixWebOrderDates turns old text dates of web orders into real dates and leaves every other row alone', () => {
+  const b = ready();
+  const s = b.sheet('Order');
+  const head = s.header();
+  const put = row => s.appendRow(head.map(h => row[h] ?? ''));
+  put({ Order_ID: 'W261120-001', Source: 'SmartMenu', Req_Date: '2026-11-21', Req_Slot: '17:00', Promise_P: '2026-11-21 17:00' });
+  put({ Order_ID: '261120-004', Source: 'สร้างเอง', Req_Date: '11/20/2026', Req_Slot: '13:00', Promise_P: 'keep me' });
+  const fixed = b.ctx.fixWebOrderDates();
+  assert.deepEqual([...fixed], ['W261120-001']);
+  const [web, staff] = s.records();
+  assert.equal(new Date(web.Req_Date).toISOString(), '2026-11-20T17:00:00.000Z');
+  assert.equal(new Date(web.Promise_P).toISOString(), '2026-11-21T10:00:00.000Z');
+  assert.equal(s.formats[`2:${head.indexOf('Promise_P') + 1}`], 'M/d/yyyy H:mm:ss');
+  assert.equal(staff.Promise_P, 'keep me');
+  assert.equal(staff.Req_Date, '11/20/2026');
 });

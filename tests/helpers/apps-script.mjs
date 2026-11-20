@@ -49,6 +49,11 @@ class FakeRange {
     return this;
   }
   setValue(v) { return this.setValues([[v]]); }
+  // Number formats are kept per cell ("row:col") so a test can check what Sheets would show.
+  setNumberFormat(f) {
+    for (let r = 0; r < this.rows; r++) for (let c = 0; c < this.cols; c++) this.sheet.formats[`${this.row + r}:${this.col + c}`] = f;
+    return this;
+  }
 }
 
 // Sheets stores "'0812345678" as the text 0812345678 (the apostrophe only stops it becoming a number or a formula).
@@ -63,7 +68,7 @@ const stored = v => {
 };
 
 export class FakeSheet {
-  constructor(name, rows = []) { this.name = name; this.cells = rows.map(r => r.map(stored)); }
+  constructor(name, rows = []) { this.name = name; this.cells = rows.map(r => r.map(stored)); this.formats = {}; }
   set(row, col, v) {
     while (this.cells.length < row) this.cells.push([]);
     const line = this.cells[row - 1];
@@ -190,6 +195,7 @@ export function loadBackend({ files = ['Bcrypt.gs', 'Code.gs', 'Admin.gs', 'Memb
       },
     },
     DriveApp: drive.api,
+    Logger: { log: () => {} },
     Utilities: {
       DigestAlgorithm: { SHA_256: 'sha256' },
       getUuid: () => randomUUID(),
