@@ -113,3 +113,28 @@ test('history with no orders is an empty list', () => {
   const m = b.member();
   assert.deepEqual(b.history(m.token), { ok: true, days: 90, orders: [] });
 });
+
+// ---------- status follows the DIFOT app (2026-11-20) ----------
+test('history status follows the app: ticked lines = Picking, then the step times, and Issue / Rejected stay as they are', () => {
+  const b = ready();
+  const m = b.member();
+  const ids = ['W261120-001', 'W261120-002', 'W261120-003', 'W261120-004', 'W261120-005', 'W261120-006', 'W261120-007'];
+  ids.forEach((id, i) => b.addOrder({ id, customer: m.id, auth: 'member', daysAgo: i / 100, status: 'Accepted' }));
+  const setCell = (id, col, v) => {
+    const s = b.sheet('Order');
+    const head = s.header();
+    const row = s.records().findIndex(o => o.Order_ID === id) + 2;
+    s.set(row, head.indexOf(col) + 1, v);
+  };
+  const line = (id, over) => { const s = b.sheet('Order_Line'); s.appendRow(s.header().map(h => ({ Line_ID: id + '-1', Order_ID: id, SKU_Code: 'PK-001', Qty_Ordered: 2, ...over })[h] ?? '')); };
+  line('W261120-001', {});                                          // not ticked yet
+  line('W261120-002', { Qty_Picked: 2, Line_Status: 'ครบ' });       // staff ticked a line in จัดของ
+  setCell('W261120-003', 'T3_Packed', new Date());                 // a time written without the Status
+  setCell('W261120-004', 'T4_Pickup', new Date());
+  setCell('W261120-005', 'T5_Delivered', new Date());
+  setCell('W261120-006', 'Status', 'Issue'); line('W261120-006', { Line_Status: 'ครบ' });
+  setCell('W261120-007', 'Status', 'Out'); line('W261120-007', { Line_Status: 'ครบ' });   // never moved backwards
+  const got = Object.fromEntries(b.history(m.token).orders.map(o => [o.id, o.status]));
+  assert.deepEqual(got, { 'W261120-001': 'Accepted', 'W261120-002': 'Picking', 'W261120-003': 'Packed', 'W261120-004': 'Out',
+    'W261120-005': 'Delivered', 'W261120-006': 'Issue', 'W261120-007': 'Out' });
+});

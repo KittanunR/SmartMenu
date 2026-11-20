@@ -175,6 +175,7 @@ function history_(o) {
   const byId = {};
   const rows = picked.slice(0, HISTORY_MAX);
   const counts = rows.length ? complaintCounts_(ss) : {};
+  const picking = rows.length ? pickingOrders_(ss) : {};
   const out = rows.map(({ r, at }) => {
     const id = orders.str(r, 'Order_ID');
     const until = complainUntil_(orders, r);
@@ -182,7 +183,7 @@ function history_(o) {
     // Req_Date in the real DIFOT sheet (2026-11-04); Web_Delivery_Date on rows written to the old sandbox.
     const day = dayText_(orders.get(r, 'Req_Date')) || dayText_(orders.get(r, 'Web_Delivery_Date'));
     byId[id] = { id, ordered_at: iso_(at), delivery_date: day,
-      total: Number(orders.get(r, 'Web_Total')) || 0, status: orders.str(r, 'Status'), items: [],
+      total: Number(orders.get(r, 'Web_Total')) || 0, status: liveStatus_(orders, r, picking[id] === true), items: [],
       complain_until: until && until.getTime() > Date.now() && n < COMPLAINTS_PER_ORDER ? iso_(until) : '', complaints: n };
     return byId[id];
   });
@@ -197,6 +198,37 @@ function history_(o) {
     }
   }
   return { ok: true, days: HISTORY_DAYS, orders: out };
+}
+
+// Order progress as the DIFOT app shows it (2026-11-20, Petch: "SmartMenu status doesn't follow DIFOT"). The app's
+// Status only moves at Pack Done / Rider Pickup / Delivered, so while staff tick lines in จัดของ it still says Accepted.
+// History therefore also reads the step timestamps and Order_Line: 'Picking' = accepted and at least one line ticked.
+const STATUS_STEP = { New: 0, Received: 1, Accepted: 1, Picking: 2, Packed: 3, Out: 4, Delivered: 5 };
+const STATUS_FINAL = { Issue: true, Rejected: true };
+
+function liveStatus_(orders, r, picking) {
+  const status = orders.str(r, 'Status');
+  if (STATUS_FINAL[status] === true || !(status in STATUS_STEP)) return status;
+  const filled = c => { const v = orders.get(r, c); return v !== '' && v != null; };
+  let best = status;
+  const raise = s => { if (STATUS_STEP[s] > STATUS_STEP[best]) best = s; };
+  if (picking) raise('Picking');
+  if (filled('T3_Packed')) raise('Packed');
+  if (filled('T4_Pickup')) raise('Out');
+  if (filled('T5_Delivered')) raise('Delivered');
+  return best;
+}
+
+/** { Order_ID: true } for orders with at least one Order_Line already ticked (Qty_Picked or Line_Status filled). */
+function pickingOrders_(ss) {
+  const sheet = ss.getSheetByName('Order_Line');
+  if (!sheet) return {};
+  const lines = table_(sheet);
+  const out = {};
+  for (let r = 0; r < lines.rows.length; r++) {
+    if (lines.str(r, 'Line_Status') || lines.str(r, 'Qty_Picked')) out[lines.str(r, 'Order_ID')] = true;
+  }
+  return out;
 }
 
 /**

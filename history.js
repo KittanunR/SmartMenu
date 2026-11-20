@@ -10,6 +10,7 @@
 (function () {
   const TIMEOUT_MS = 30000;   // an Apps Script cold start plus reading the Order sheet
   const UPLOAD_TIMEOUT_MS = 90000;   // a complaint carries photos: give a slow phone connection time
+  const REFRESH_MS = 60000;   // History re-asks the server this often while the page is shown (2026-11-20)
   const PHOTO_MAX = 3;
   const PHOTO_B64_MAX = 780000;      // ≈ 585 KB, under Member.gs PHOTO_MAX_BYTES (600 KB)
   const REASONS = ['RD-01', 'RD-02', 'RD-03', 'RD-04', 'RD-05', 'RD-06'];   // DIFOT Master, Type Reason_Delivery
@@ -88,7 +89,7 @@
       unit: (u) => ({ kg: 'กก.', tray: 'แผง', pack: 'แพ็ก' }[u] || u),
       status: {
         New: 'รอร้านยืนยัน', Received: 'รับออเดอร์แล้ว', Accepted: 'รับออเดอร์แล้ว', Rejected: 'ร้านรับออเดอร์ไม่ได้ ร้านจะติดต่อกลับ',
-        Packed: 'จัดของแล้ว', Out: 'กำลังไปส่ง',
+        Picking: 'กำลังจัดของ', Packed: 'จัดของแล้ว', Out: 'กำลังไปส่ง',
         Delivered: 'ส่งแล้ว', Issue: 'มีปัญหา ร้านจะติดต่อกลับ',
       },
     },
@@ -161,14 +162,14 @@
       unit: (u, n) => ({ kg: 'kg', tray: n === 1 ? 'tray' : 'trays', pack: n === 1 ? 'pack' : 'packs' }[u] || u),
       status: {
         New: 'Waiting for the shop', Received: 'Received', Accepted: 'Received', Rejected: "Can't be filled, we'll contact you",
-        Packed: 'Packed', Out: 'On the way',
+        Picking: 'Packing your order', Packed: 'Packed', Out: 'On the way',
         Delivered: 'Delivered', Issue: "Problem — we'll contact you",
       },
     },
   };
   // Pill look per DIFOT status (styles.css .pill--*); anything else gets the plain look.
   // Accepted / Rejected: the real DIFOT app's names (2026-11-04); Received: orders from the old sandbox.
-  const STATUS_LOOK = { New: 'wait', Received: 'wait', Accepted: 'wait', Packed: 'wait', Out: 'out', Delivered: 'done', Issue: 'issue', Rejected: 'issue' };
+  const STATUS_LOOK = { New: 'wait', Received: 'wait', Accepted: 'wait', Picking: 'wait', Packed: 'wait', Out: 'out', Delivered: 'done', Issue: 'issue', Rejected: 'issue' };
 
   // Japanese, Chinese, Korean and Hindi from i18n.js, over English so a missing text shows in English.
   const I18N = window.SM_I18N || null;
@@ -415,6 +416,7 @@
 
   function orderCard(o, t) {
     const li = el('li', 'hist');
+    li.dataset.id = o.id;
     const top = el('div', 'hist__top');
     top.append(el('span', 'hist__date', when(o.ordered_at, t)));
     // Status on the right; the red "report a problem" button sits right beside it so the shop sees it at once
@@ -698,6 +700,32 @@
     render();
   }
 
+  // Quiet refresh (2026-11-20): DIFOT staff move an order on while this page is open, so ask again every minute while it
+  // is shown and at once when the shop comes back to it (tab switch, back from LINE, iPhone back/forward cache).
+  // Redraws only when something changed, and keeps open item lists open. Never while a complaint is being written.
+  let quietBusy = false;
+  async function refresh() {
+    if (!state.member || state.loading || state.cp || quietBusy || document.visibilityState !== 'visible') return;
+    quietBusy = true;
+    try {
+      const res = await post({ contract: 'order.v1', action: 'history', token: state.member.token });
+      if (res.error === 'session') { loggedOut(); return; }
+      if (!res.ok || !Array.isArray(res.orders)) return;   // keep what is on screen
+      if (state.result && !state.error && JSON.stringify(state.result) === JSON.stringify(res)) return;
+      const open = new Set([...$('h-list').querySelectorAll('li.hist')]
+        .filter((li) => { const d = li.querySelector('details'); return d && d.open; }).map((li) => li.dataset.id));
+      state.result = res;
+      state.error = '';
+      render();
+      $('h-list').querySelectorAll('li.hist').forEach((li) => {
+        const d = li.querySelector('details');
+        if (d && open.has(li.dataset.id)) d.open = true;
+      });
+    } finally {
+      quietBusy = false;
+    }
+  }
+
   async function boot() {
     // Language picker: a native select under a pill; languages without texts (i18n.js did not load) are taken out.
     [...$('lang-select').options].forEach((o) => { if (!TEXT[o.value]) o.remove(); });
@@ -720,6 +748,9 @@
     state.config = config || {};
     ((catalog && catalog.products) || []).forEach((p) => state.catalog.set(p.sku, p));
     if (state.member) await load(); else render();
+    setInterval(refresh, REFRESH_MS);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('pageshow', (ev) => { if (ev.persisted) refresh(); });
   }
 
   boot();
