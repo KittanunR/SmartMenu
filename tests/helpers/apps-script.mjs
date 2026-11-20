@@ -43,6 +43,7 @@ class FakeRange {
     }
     return out;
   }
+  getDisplayValues() { return this.getValues().map(line => line.map(v => String(v))); }
   setValues(values) {
     if (values.length !== this.rows || values.some(v => v.length !== this.cols)) throw new Error('setValues: size does not match the range');
     values.forEach((line, r) => line.forEach((v, c) => this.sheet.set(this.row + r, this.col + c, v)));

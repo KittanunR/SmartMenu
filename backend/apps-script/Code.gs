@@ -447,20 +447,21 @@ function dateFormats_(sheet, row) {
  */
 function fixWebOrderDates() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Order');
-  const data = sheet.getDataRange().getValues();
+  const range = sheet.getDataRange();
+  const data = range.getValues();
+  const shown = range.getDisplayValues();   // a time-only cell read as a Date is from 1899, where Bangkok was +6:42
   const head = data[0];
   const iId = head.indexOf('Order_ID'), iSrc = head.indexOf('Source'), iDay = head.indexOf('Req_Date'),
     iSlot = head.indexOf('Req_Slot'), iP = head.indexOf('Promise_P');
   const dayOf = v => (v && typeof v.getTime === 'function' ? Utilities.formatDate(v, TZ, 'yyyy-MM-dd')
     : (String(v).match(/^\d{4}-\d{2}-\d{2}/) || [''])[0]);
-  const slotOf = v => (v && typeof v.getTime === 'function' ? Utilities.formatDate(v, TZ, 'HH:mm')
-    : (String(v).match(/^\d{1,2}:\d{2}/) || [WEB_ORDER.slotDefault])[0].padStart(5, '0'));
+  const slotOf = v => (String(v).match(/^\d{1,2}:\d{2}/) || [WEB_ORDER.slotDefault])[0].padStart(5, '0');
   const fixed = [];
   for (let r = 1; r < data.length; r++) {
     if (!/^W\d{6}-\d{3}$/.test(String(data[r][iId])) || data[r][iSrc] !== WEB_ORDER.source) continue;
     const day = dayOf(data[r][iDay]);
     if (!day) continue;
-    const slot = slotOf(data[r][iSlot]);
+    const slot = slotOf(shown[r][iSlot]);
     sheet.getRange(r + 1, iDay + 1).setValue(new Date(day + 'T00:00:00+07:00'));
     sheet.getRange(r + 1, iP + 1).setValue(new Date(day + 'T' + slot + ':00+07:00'));
     dateFormats_(sheet, r + 1);
