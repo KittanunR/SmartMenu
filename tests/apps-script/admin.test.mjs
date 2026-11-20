@@ -6,7 +6,7 @@ import { Script } from 'node:vm';
 import { loadBackend, guestOrder } from '../helpers/apps-script.mjs';
 
 const OWNER = 'owner@example.com';
-const TEMP = /^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/;
+const TEMP = /^0812345678$/;   // first password = the shop phone, digits only (2026-11-20)
 const DAY = 24 * 3600 * 1000;
 const isDate = v => Object.prototype.toString.call(v) === '[object Date]'; // dates made inside the vm are another realm's Date
 
@@ -82,9 +82,7 @@ test('create shop: Master row, shop code, and a temporary password stored only a
   const exp = new Date(a.Temp_Expires_At).getTime();
   assert.ok(exp >= before + 7 * DAY - 1000 && exp <= Date.now() + 7 * DAY + 1000);
 
-  // Shown once: the password is in this answer only, never in the sheet; the hash never leaves the server.
-  assert.ok(!allCells(b.ss).includes(res.temp_password.replace('-', '')));
-  assert.ok(!allCells(b.ss).includes(res.temp_password));
+  // The hash never leaves the server.
   assert.ok(!JSON.stringify(res).includes('$2'));
   assert.equal(res.shop.account, 'temp');
   assert.equal(res.shop.id, 'CUS-W001');
@@ -178,11 +176,10 @@ test('reset gives a new temporary password and logs every device out', () => {
   const res = b.call('adminIssuePassword', 'CUS-W001');
   assert.equal(res.ok, true);
   assert.match(res.temp_password, TEMP);
-  assert.notEqual(res.temp_password, first.temp_password);
+  assert.equal(res.temp_password, first.temp_password, 'reset goes back to the phone');
   const [a] = auth.records();
   assert.equal(auth.records().length, 1);
   assert.ok(b.matches(res.temp_password, a.Password_Hash));
-  assert.ok(!b.matches(first.temp_password, a.Password_Hash));
   assert.equal(a.Must_Change, true);
   const s = sessions.records();
   assert.ok(isDate(s[0].Revoked_At), 'this shop\'s session is revoked');
@@ -367,7 +364,7 @@ test('logo upload checks type, content and size', () => {
 });
 
 // ---------- audit ----------
-test('every change is logged with who did it, and the log never holds a password', () => {
+test('every change is logged with who did it, and the log never holds a password hash', () => {
   const b = ready();
   const res = b.call('adminCreateShop', SHOP);
   const again = b.call('adminIssuePassword', 'CUS-W001');
@@ -377,9 +374,7 @@ test('every change is logged with who did it, and the log never holds a password
     [OWNER, 'shop_created', 'CUS-W001'], [OWNER, 'password_issued', 'CUS-W001'], [OWNER, 'account_disabled', 'CUS-W001'],
   ]);
   const text = JSON.stringify(b.sheet('Admin_Log').cells);
-  for (const p of [res.temp_password, again.temp_password]) {
-    assert.ok(!text.includes(p) && !text.includes(p.replace('-', '')));
-  }
+  assert.ok(res.ok && again.ok && !text.includes('$2'));
 });
 
 // ---------- orders still work ----------

@@ -53,10 +53,11 @@ test('temp password login asks for a new password and gives a short-lived change
   assert.equal(b.sheet('Sessions').records().length, 0);
 });
 
-test('the temp password works typed without the dash, in small letters, with spaces, and with a formatted phone', () => {
+test('the first password is the phone, typed with or without dashes or spaces, and with a formatted phone', () => {
   const b = ready();
   const { temp } = b.newShop();
-  for (const typed of [temp.replace('-', ''), temp.toLowerCase(), ` ${temp.slice(0, 5)} ${temp.slice(6)} `]) {
+  assert.equal(temp, PHONE);
+  for (const typed of [PHONE, '081-234-5678', ' 081 234 5678 ']) {
     assert.equal(b.login('081-234-5678', typed).must_change, true, typed);
   }
 });
@@ -124,7 +125,7 @@ test('new password rules: 8+ characters, at most 72 bytes, not the phone, not co
     ['12345678', 'password_common'],
     ['Password', 'password_common'],
     ['aaaaaaaaaa', 'password_common'],
-    [temp, 'password_same'],
+    [temp, 'password_phone'],                   // the first password is the phone
   ];
   for (const [pw, error] of bad) assert.deepEqual(b.setPassword(change, pw), { ok: false, error }, pw);
   assert.equal(b.setPassword(change, 'ข้าวมันไก่ 22').ok, true, 'Thai and spaces are fine');

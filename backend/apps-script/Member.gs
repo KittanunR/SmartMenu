@@ -2,7 +2,7 @@
  * Shop login (Phase 3), order History (Phase 4) and complaints (2026-11-03). The site (member.html / history.html / app.js)
  * calls these through doPost with { action: 'login' | 'set_password' | 'me' | 'logout' | 'history' | 'complain', ... };
  * orders carry { session: token }.
- * - First login uses the temporary password from the admin page and must set the shop's own password.
+ * - First login uses the first password (= the shop's phone, 2026-11-20) and must set the shop's own password.
  * - A session token is 32 random bytes (64 hex). Only its SHA-256 is stored (Sessions.Token_Hash).
  * - A shop logs in with its phone or its login name (Member_Auth.Login_Name, 2026-10-27) and the same password.
  * - Same answer for a wrong phone / name and a wrong password; 5 wrong tries lock that account for 15 min, whichever
@@ -49,7 +49,7 @@ const failKeyAll_ = () => 'lf:all:' + Utilities.formatDate(new Date(), TZ, 'yyMM
 const hex_ = bytes => bytes.map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
 const sha256Hex_ = s => hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s));
 const randomHex_ = n => hex_(randomBytes_(n));
-// The temp password is shown as XXXXX-XXXXX; shops may type it with or without the dash, spaces or capitals.
+// First password = the phone; shops may type it with dashes or spaces. Older random ones (XXXXX-XXXXX) still work.
 const normTemp_ = p => String(p).replace(/[\s-]/g, '').toUpperCase();
 const utf8Length_ = s => unescape(encodeURIComponent(s)).length;
 

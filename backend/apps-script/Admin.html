@@ -119,7 +119,7 @@
         <label class="btn" style="display:inline-flex;align-items:center;">เลือกรูป<input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
       </div>
     </div>
-    <p class="note" id="shop-note">บันทึกแล้วระบบจะออกรหัสผ่านชั่วคราวให้ร้าน (แสดงครั้งเดียว)</p>
+    <p class="note" id="shop-note">บันทึกแล้วรหัสผ่านแรกของร้าน = เบอร์โทรร้าน</p>
     <p class="err" id="shop-err" hidden></p>
     <div class="dlg__actions">
       <button class="btn" type="button" data-close>ยกเลิก</button>
@@ -140,13 +140,13 @@
   </div>
 </dialog>
 
-<!-- temporary password, shown once -->
+<!-- first password (= the shop phone) -->
 <dialog id="dlg-secret">
   <div class="dlg">
-    <h2>รหัสผ่านชั่วคราว</h2>
+    <h2>รหัสผ่านแรก</h2>
     <p id="secret-shop"></p>
     <div class="secret" id="secret"></div>
-    <p class="warn">แสดงครั้งเดียว ปิดหน้าต่างนี้แล้วจะดูอีกไม่ได้ ถ้าหายให้กดรีเซ็ตรหัสใหม่ ร้านต้องตั้งรหัสใหม่ตอนเข้าระบบครั้งแรก</p>
+    <p class="warn">รหัสผ่านแรก = เบอร์โทรร้าน ร้านต้องเข้าระบบและตั้งรหัสใหม่ภายใน 7 วัน ถ้าลืมให้กดรีเซ็ตรหัส (กลับเป็นเบอร์โทรร้าน)</p>
     <p class="note">ข้อความสำหรับส่งให้ร้านทาง LINE:</p>
     <pre class="msg" id="secret-msg"></pre>
     <div class="dlg__actions">
@@ -424,7 +424,7 @@
 
   async function issue(s, isReset) {
     if (isReset && !(await confirmBox('รีเซ็ตรหัสของ ' + s.name + '?',
-      'รหัสเดิมจะใช้ไม่ได้ทันที และทุกเครื่องที่ล็อกอินอยู่จะถูกออกจากระบบ ร้านต้องเข้าด้วยรหัสชั่วคราวใหม่', 'รีเซ็ตรหัส'))) return;
+      'รหัสเดิมจะใช้ไม่ได้ทันที และทุกเครื่องที่ล็อกอินอยู่จะถูกออกจากระบบ ร้านต้องเข้าด้วยเบอร์โทรร้านเป็นรหัสผ่าน แล้วตั้งรหัสใหม่', 'รีเซ็ตรหัส'))) return;
     const res = await run('กำลังออกรหัสผ่าน', () => call('adminIssuePassword', s.id));
     if (!res) return;
     if (!res.ok) return toast(errText(res), true);
@@ -435,7 +435,7 @@
 
   async function disable(s) {
     if (!(await confirmBox('ปิดบัญชี ' + s.name + '?',
-      'ร้านจะล็อกอินไม่ได้ และทุกเครื่องจะถูกออกจากระบบ ลิงก์ QR ร้านยังใช้สั่งของได้ตามเดิม เปิดบัญชีอีกครั้งได้ภายหลัง (จะได้รหัสชั่วคราวใหม่)', 'ปิดบัญชี', true))) return;
+      'ร้านจะล็อกอินไม่ได้ และทุกเครื่องจะถูกออกจากระบบ ลิงก์ QR ร้านยังใช้สั่งของได้ตามเดิม เปิดบัญชีอีกครั้งได้ภายหลัง (รหัสผ่านกลับเป็นเบอร์โทรร้าน)', 'ปิดบัญชี', true))) return;
     const res = await run('กำลังปิดบัญชี', () => call('adminDisableAccount', s.id));
     if (!res) return;
     if (!res.ok) return toast(errText(res), true);
@@ -450,7 +450,7 @@
       'บัญชี SmartMenu ของร้าน ' + shop.name,
       'เข้าระบบด้วยเบอร์: ' + shop.phone,
       shop.login_name ? 'หรือชื่อร้าน: ' + shop.login_name : '',
-      'รหัสผ่านชั่วคราว: ' + temp,
+      'รหัสผ่านแรก: เบอร์โทรร้าน (' + temp + ')',
       'ใช้ได้ถึง: ' + dateTh(shop.temp_expires_at),
       'เข้าครั้งแรกระบบจะให้ตั้งรหัสผ่านใหม่ของร้านเอง',
       loginUrl ? 'เข้าระบบที่: ' + loginUrl : '',
@@ -474,7 +474,7 @@
   $('shop-form').addEventListener('submit', saveShop);
   $('logo-file').addEventListener('change', pickLogo);
   $('secret-copy').addEventListener('click', () => copy($('secret-msg').textContent));
-  // The temp password must not stay in the page after the dialog closes.
+  // Clear the dialog when it closes.
   $('dlg-secret').addEventListener('close', () => { $('secret').textContent = ''; $('secret-msg').textContent = ''; });
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
   load();

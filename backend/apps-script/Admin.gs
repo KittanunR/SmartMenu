@@ -1,16 +1,16 @@
 /**
- * Admin page for shop accounts (Phase 2): list / add / edit shops, temporary passwords, disable, logo.
+ * Admin page for shop accounts (Phase 2): list / add / edit shops, first passwords, disable, logo.
  * doGet (Code.gs) serves Admin.html only to a signed-in admin. The page calls the admin* functions below through
  * google.script.run, and every one of them checks the caller again, so the public order deployment (nobody signed
  * in) can never reach them.
  * Deploy as a SECOND web-app deployment of this project: Execute as = Me, Who has access = Only myself.
- * A temporary password is returned to the page once and stored only as a bcrypt hash; hashes never leave the server.
+ * First password = the shop's phone (decided 2026-11-20, easier for shops): stored only as a bcrypt hash, must be
+ * changed at first login, expires after TEMP_DAYS. Hashes never leave the server.
  * Every value written to the sheet goes through plain_ (Code.gs), so nothing typed here can become a formula.
  * See wiki/member-accounts.md.
  */
 const BCRYPT_COST = 12;              // ≈0.47 s per check in Apps Script (Phase 0, 2026-10-23)
 const TEMP_DAYS = 7;
-const TEMP_LENGTH = 10;              // from CODE_ALPHABET ≈ 49 bits; shown as XXXXX-XXXXX, the dash is not part of it
 const LOGO_MAX_BYTES = 300 * 1024;   // the page shrinks logos to 512 px before upload, so this is generous
 const LOGO_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 const LOGO_SUBFOLDER = 'Master_Images';   // next to the sheet; AppSheet's own name for a Master table's images
@@ -291,9 +291,10 @@ function uniqueShopCode_(m) {
   return code;
 }
 
-/** New random temporary password: bcrypt hash into Member_Auth (row added or replaced), every session revoked. */
+/** First password = the shop's phone (digits only): bcrypt hash into Member_Auth (row added or replaced), every session
+ *  revoked. Must_Change forces the shop to choose its own at first login (which may not contain the phone). */
 function setTempPassword_(ss, id, phone, login, now) {
-  const temp = randomCode_(TEMP_LENGTH);
+  const temp = String(phone);
   const values = { Customer_ID: id, Login_Phone: "'" + phone, Login_Name: login,
     Password_Hash: bcrypt_.hashSync(temp, BCRYPT_COST),
     Must_Change: true, Temp_Expires_At: new Date(now.getTime() + TEMP_DAYS * DAY_MS), Password_Set_At: '' };
@@ -302,7 +303,7 @@ function setTempPassword_(ss, id, phone, login, now) {
   if (a === -1) appendByHeader_(auth.sheet, values);
   else auth.set(a, values);
   revokeSessions_(ss, id, now);
-  return temp.slice(0, 5) + '-' + temp.slice(5);
+  return temp;
 }
 
 /** `len` letters from CODE_ALPHABET, each equally likely (bytes ≥ 248 are skipped so 256 % 31 adds no bias). */
