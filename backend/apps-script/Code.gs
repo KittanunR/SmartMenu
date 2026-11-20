@@ -257,7 +257,9 @@ function doPost(e) {
     appendByHeader_(orders, {
       Order_ID: orderId, Shop_ID: SHOP_ID, Source: WEB_ORDER.source, Channel: WEB_ORDER.channel,
       Order_Date: now, T1_Ordered: now, T2_Saved: now, Customer_ID: customerId,
-      Req_Date: reqDay, Req_Slot: slot, Promise_P: promise,
+      // Req_Slot stays TEXT like the app's own rows ("13:00"): Sheets turns a bare "17:00" into a time value, and the app's
+      // formula Promise_P = DATETIME([Req_Date]) + (TIME([Req_Slot]) - "00:00:00") then gives NaN (2026-11-20).
+      Req_Date: reqDay, Req_Slot: "'" + slot, Promise_P: promise,
       Delivery_Mode: WEB_ORDER.deliveryMode, Note: orderNote_(o), T_Accept: now, Customer_Issue: false, Status: WEB_ORDER.status,
       Web_Shop_Name: o.customer.shop_name, Web_Phone: o.customer.phone ? "'" + o.customer.phone : '',
       Web_Total: o.total, Web_Client_ID: o.client_order_id || '', Auth: member ? 'member' : shop ? 'shop_qr' : 'guest'
@@ -441,8 +443,8 @@ function dateFormats_(sheet, row) {
 }
 
 /**
- * Run once by hand (2026-11-20): web orders written before the fix have Req_Date / Promise_P as text or in yyyy-MM-dd,
- * which AppSheet could not read back, so Pack Done / Delivered failed on them. Rewrites them as real dates in the
+ * Run once by hand (2026-11-20): web orders written before the fix have Req_Date / Promise_P as text or in yyyy-MM-dd
+ * and Req_Slot as a time value, which AppSheet could not read back, so Pack Done / Delivered failed on them. Rewrites them as real dates in the
  * app's format. Only rows with Source SmartMenu and an Order_ID starting with W; nothing else is touched.
  */
 function fixWebOrderDates() {
@@ -463,6 +465,7 @@ function fixWebOrderDates() {
     if (!day) continue;
     const slot = slotOf(shown[r][iSlot]);
     sheet.getRange(r + 1, iDay + 1).setValue(new Date(day + 'T00:00:00+07:00'));
+    sheet.getRange(r + 1, iSlot + 1).setValue("'" + slot);   // text, as the app writes it
     sheet.getRange(r + 1, iP + 1).setValue(new Date(day + 'T' + slot + ':00+07:00'));
     dateFormats_(sheet, r + 1);
     fixed.push(data[r][iId]);
